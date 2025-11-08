@@ -1,0 +1,32 @@
+<!doctype html>
+<html>
+<head>
+    <title>RDLINet Test</title>
+</head>
+<body>
+    <h2>Upload Lung Sound</h2>
+    <!-- <form id="uploadForm" enctype="multipart/form-data">
+        <input type="number" name="user_id" placeholder="User ID" required />
+        <input type="file" name="file" accept=".wav" required />
+        <button type="submit">Upload</button>
+    </form> -->
+    <form id="uploadForm" enctype="multipart/form-data">
+    <input type="file" name="file" accept=".wav" required />
+    <button type="submit">Upload</button>
+</form>
+
+    <pre id="output"></pre>
+
+    <script>
+    const form = document.getElementById("uploadForm");
+    const output = document.getElementById("output");
+    form.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        const data = new FormData(form);
+        const res = await fetch("/upload_audio", { method: "POST", body: data });
+        const json = await res.json();
+        output.innerText = JSON.stringify(json, null, 2);
+    });
+    </script>
+</body>
+</html>
