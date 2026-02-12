@@ -79,6 +79,7 @@ import io from "socket.io-client";
 // ✅ Socket connection setup (keep this near the top of ChatRoom.jsx)
 const socket = io("http://127.0.0.1:8000", {
   transports: ["websocket"],
+  autoConnect: false,
   reconnection: true,
   reconnectionAttempts: 5,
   reconnectionDelay: 2000,
@@ -106,8 +107,14 @@ const ChatRoom = () => {
   const [connected, setConnected] = useState(false);
 
   useEffect(() => {
-  if (!appointmentId) return;
+  if (!appointmentId) 
+    if (!appointmentId) {
+    console.log("❗ No appointmentId in params");
+    return;
+  }
 
+  // remove any old listeners to avoid duplicates
+  socket.off();
   socket.connect();
 
   socket.emit("join", {
@@ -116,28 +123,33 @@ const ChatRoom = () => {
   });
 
   socket.on("connect", () => {
-    console.log("🟢 Connected to chat server");
+    console.log("🟢 Socket connected (client)", socket.id);
     setConnected(true);
+    const payload = { appointment_id: appointmentId, user_name: user.name };
+    console.log("➡️ Emitting join with payload:", payload);
+    socket.emit("join", payload);
   });
 
   socket.on("system_message", (data) => {
+    console.log("system_message received:", data);
     setMessages((prev) => [...prev, { message: data.message, system: true }]);
   });
 
   socket.on("receive_message", (data) => {
+    console.log("receive_message received:", data);
     setMessages((prev) => [...prev, data]);
   });
 
-  socket.on("disconnect", () => {
-    console.log("🔴 Disconnected from chat server");
+  socket.on("disconnect", (reason) => {
+    console.log("🔴 Socket disconnected (client):", reason);
     setConnected(false);
   });
 
   // ❌ DON'T disconnect the socket on unmount, only remove listeners
   return () => {
-    socket.off("receive_message");
-    socket.off("system_message");
     socket.off("connect");
+    socket.off("system_message");
+    socket.off("receive_message");
     socket.off("disconnect");
   };
 }, [appointmentId]);

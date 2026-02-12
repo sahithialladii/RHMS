@@ -1063,507 +1063,829 @@
 
 
 # app.py
+# from flask import Flask, request, jsonify
+# from flask_sqlalchemy import SQLAlchemy
+# from flask_cors import CORS
+# from werkzeug.utils import secure_filename
+# import bcrypt
+# import numpy as np
+# import os
+# import librosa
+# from datetime import datetime, time, timedelta
+# from tensorflow.keras.models import load_model
+# from flask_socketio import SocketIO, emit, join_room, leave_room
+# from datetime import datetime
+
+
+
+
+# # ---------------- APP CONFIG ----------------
+# app = Flask(__name__)
+# CORS(app)
+
+# socketio = SocketIO(app, cors_allowed_origins="*")
+
+# app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://root:%40Sahithi89@localhost/rhms'
+# app.config['UPLOAD_FOLDER'] = 'uploads'
+# os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
+# app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+
+# db = SQLAlchemy(app)
+
+# # ---------------- DATABASE MODELS ----------------
+# class User(db.Model):
+#     id = db.Column(db.Integer, primary_key=True)
+#     role = db.Column(db.String(10))  # patient / doctor
+#     name = db.Column(db.String(100))
+#     email = db.Column(db.String(100), unique=True)
+#     password = db.Column(db.LargeBinary(200))
+#     profile_completed = db.Column(db.Boolean, default=False)
+
+# class PatientProfile(db.Model):
+#     id = db.Column(db.Integer, primary_key=True)
+#     user_id = db.Column(db.Integer, unique=True)
+#     age = db.Column(db.Integer)
+#     condition = db.Column(db.String(200))
+#     doctor_id = db.Column(db.Integer, nullable=True)            # current connected doctor (if any)
+#     previous_doctor_id = db.Column(db.Integer, nullable=True)   # regular / previous doctor
+#     urgent = db.Column(db.Boolean, default=False)
+#     audio_file = db.Column(db.String(200))
+#     model_output = db.Column(db.String(200))
+
+# class DoctorProfile(db.Model):
+#     id = db.Column(db.Integer, primary_key=True)
+#     user_id = db.Column(db.Integer, unique=True)
+#     specialization = db.Column(db.String(200))
+#     experience = db.Column(db.Integer)
+#     # Availability stored as HH:MM strings (24h). Use complete_profile to set.
+#     available_from = db.Column(db.Time)
+#     available_to = db.Column(db.Time)
+#     max_patients = db.Column(db.Integer, default=5)
+#     current_patients = db.Column(db.Integer, default=0)
+#     status = db.Column(db.String(20), default="Available")  # Available / Unavailable
+
+# class Appointment(db.Model):
+#     id = db.Column(db.Integer, primary_key=True)
+#     doctor_id = db.Column(db.Integer)
+#     patient_id = db.Column(db.Integer)
+#     status = db.Column(db.String(20), default="Pending")  # Pending / Active / Completed
+#     timestamp = db.Column(db.DateTime, default=datetime.utcnow)
+
+
+# class ChatMessage(db.Model):
+#     id = db.Column(db.Integer, primary_key=True)
+#     appointment_id = db.Column(db.Integer, db.ForeignKey('appointment.id'), nullable=False)
+#     sender_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+#     message = db.Column(db.Text, nullable=False)
+#     timestamp = db.Column(db.DateTime, default=datetime.utcnow)
+
+
+# with app.app_context():
+#     db.create_all()
+
+# # ---------------- LOAD DL MODEL ----------------
+# MODEL_PATH = "model/model.keras"
+# # load_model may fail if model path missing - keep try/except if needed
+# model = load_model(MODEL_PATH)
+# print("✅ Keras model loaded successfully!")
+
+# # ---------------- HELPERS ----------------
+# def parse_time_hhmm(s):
+#     """Parse "HH:MM" into a time object. Return None if invalid/None."""
+#     if not s:
+#         return None
+#     try:
+#         return datetime.strptime(s, "%H:%M").time()
+#     except Exception:
+#         return None
+
+# def doctor_is_connectable_now(doc_profile):
+#     """
+#     Returns True if current time is within [available_from - 1hour, available_to].
+#     If doc has no availability set, returns False.
+#     """
+#     start = parse_time_hhmm(doc_profile.available_from)
+#     end = parse_time_hhmm(doc_profile.available_to)
+#     if not start or not end:
+#         return False
+#     now = datetime.now().time()
+#     # compute start_allowed = start - 1 hour
+#     # because time objects don't support subtraction directly, use datetime combine
+#     today = datetime.today()
+#     start_dt = datetime.combine(today, start) - timedelta(hours=1)
+#     end_dt = datetime.combine(today, end)
+#     now_dt = datetime.combine(today, now)
+#     return start_dt <= now_dt <= end_dt and doc_profile.status == "Available"
+
+# # ---------------- REGISTER ----------------
+# @app.route('/register', methods=['POST'])
+# def register():
+#     data = request.get_json()
+#     name = data.get('name')
+#     email = data.get('email')
+#     password = data.get('password')
+#     role = data.get('role')
+
+#     if User.query.filter_by(email=email).first():
+#         return jsonify({'error': 'Email already registered'}), 400
+
+#     hashed_pw = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt())
+#     new_user = User(name=name, email=email, password=hashed_pw, role=role)
+#     db.session.add(new_user)
+#     db.session.commit()
+
+#     # create role-specific profile record
+#     if role == 'patient':
+#         profile = PatientProfile(user_id=new_user.id,
+#                                  age=data.get('age'),
+#                                  condition=data.get('condition'))
+#         db.session.add(profile)
+#     else:  # doctor
+#         profile = DoctorProfile(
+#             user_id=new_user.id,
+#             specialization=data.get('specialization'),
+#             experience=data.get('experience'),
+#             available_from=data.get('available_from'),  # expect "HH:MM"
+#             available_to=data.get('available_to'),      # expect "HH:MM"
+#             max_patients=data.get('max_patients', 5)
+#         )
+#         db.session.add(profile)
+
+#     new_user.profile_completed = True
+#     db.session.commit()
+
+#     return jsonify({'message': 'Registration successful. Please login.'}), 201
+
+# # ---------------- LOGIN ----------------
+# @app.route('/login', methods=['POST'])
+# def login():
+#     data = request.get_json()
+#     email = data.get('email')
+#     password = data.get('password')
+#     role = data.get('role')
+
+#     user = User.query.filter_by(email=email, role=role).first()
+#     if not user:
+#         return jsonify({'error': 'User not found for this role'}), 404
+
+#     if bcrypt.checkpw(password.encode('utf-8'), user.password):
+#         return jsonify({
+#             'message': 'Login successful',
+#             'user': {
+#                 'id': user.id,
+#                 'name': user.name,
+#                 'role': user.role,
+#                 'profile_completed': user.profile_completed
+#             }
+#         }), 200
+#     else:
+#         return jsonify({'error': 'Invalid credentials'}), 401
+
+# # ---------------- COMPLETE PROFILE (update availability) ----------------
+# @app.route('/complete_profile', methods=['POST'])
+# def complete_profile():
+#     data = request.get_json()
+#     user_id = data.get('user_id')
+#     user = User.query.get(user_id)
+#     if not user:
+#         return jsonify({'error': 'User not found'}), 404
+
+#     if user.role == 'patient':
+#         profile = PatientProfile.query.filter_by(user_id=user.id).first()
+#         if not profile:
+#             profile = PatientProfile(user_id=user.id)
+#             db.session.add(profile)
+#         profile.age = data.get('age')
+#         profile.condition = data.get('condition')
+#     else:
+#         profile = DoctorProfile.query.filter_by(user_id=user.id).first()
+#         if not profile:
+#             profile = DoctorProfile(user_id=user.id)
+#             db.session.add(profile)
+#         profile.specialization = data.get('specialization')
+#         profile.experience = data.get('experience')
+#         # expect times as "HH:MM"
+#         profile.available_from = data.get('available_from')
+#         profile.available_to = data.get('available_to')
+#         profile.max_patients = data.get('max_patients', profile.max_patients)
+
+#     user.profile_completed = True
+#     db.session.commit()
+#     return jsonify({'message': 'Profile completed successfully'}), 200
+
+# # ---------------- UPLOAD AUDIO (unchanged) ----------------
+# @app.route('/upload_audio', methods=['POST'])
+# def upload_audio():
+#     user_id = request.form.get('user_id')
+#     file = request.files.get('file')
+
+#     if not file:
+#         return jsonify({'error': 'No file uploaded'}), 400
+
+#     filename = secure_filename(file.filename)
+#     filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+#     file.save(filepath)
+
+#     try:
+#         y, sr = librosa.load(filepath, sr=16000)
+#         mel_spec = librosa.feature.melspectrogram(y=y, sr=sr, n_mels=64)
+#         mel_spec_db = librosa.power_to_db(mel_spec, ref=np.max)
+
+#         if mel_spec_db.shape[1] < 38:
+#             pad_width = 38 - mel_spec_db.shape[1]
+#             mel_spec_db = np.pad(mel_spec_db, ((0, 0), (0, pad_width)), mode='constant')
+#         else:
+#             mel_spec_db = mel_spec_db[:, :38]
+
+#         mel_spec_db = (mel_spec_db - np.min(mel_spec_db)) / (np.max(mel_spec_db) - np.min(mel_spec_db))
+#         input_data = np.stack([mel_spec_db] * 3, axis=-1)
+#         input_data = np.expand_dims(input_data, axis=0)
+
+#         prediction = model.predict(input_data)
+#         predicted_class = np.argmax(prediction, axis=1)[0]
+
+#         label_map = {
+#             0: "Asthma",
+#             1: "Broncheostasis",
+#             2: "Bronchiolitis",
+#             3: "COPD",
+#             4: "Healthy",
+#             5: "Pneumonia",
+#             6: "URTI"
+#         }
+#         output = label_map.get(predicted_class, "Unknown")
+
+#     except Exception as e:
+#         output = f"Error during model prediction: {str(e)}"
+
+#     patient = PatientProfile.query.filter_by(user_id=user_id).first()
+#     if patient:
+#         patient.audio_file = filepath
+#         patient.model_output = output
+#         db.session.commit()
+
+#     return jsonify({'message': 'Audio uploaded successfully', 'prediction': output}), 200
+
+# # ---------------- LIST DOCTORS FOR PATIENT ----------------
+# @app.route('/available_doctors_for_patient/<int:patient_user_id>', methods=['GET'])
+# def available_doctors_for_patient(patient_user_id):
+#     """
+#     Returns list of doctors for the patient to choose from:
+#      - includes patient's previous doctor (if any) first (with availability info)
+#      - then list of other doctors who are connectable now (one hour before available_from through available_to),
+#        sorted by current_patients ascending (lowest workload first)
+#     """
+#     # fetch patient profile
+#     patient = PatientProfile.query.filter_by(user_id=patient_user_id).first()
+#     if not patient:
+#         return jsonify({'error': 'Patient not found'}), 404
+
+#     result = []
+
+#     # 1) include previous doctor if exists
+#     if patient.previous_doctor_id:
+#         prev_doc = DoctorProfile.query.get(patient.previous_doctor_id)
+#         if prev_doc:
+#             user = User.query.get(prev_doc.user_id)
+#             result.append({
+#                 'doctor_id': prev_doc.id,
+#                 'user_id': prev_doc.user_id,
+#                 'name': user.name if user else None,
+#                 'specialization': prev_doc.specialization,
+#                 'available_from': prev_doc.available_from,
+#                 'available_to': prev_doc.available_to,
+#                 'current_patients': prev_doc.current_patients,
+#                 'max_patients': prev_doc.max_patients,
+#                 'status': prev_doc.status,
+#                 'is_regular': True,
+#                 'connectable_now': doctor_is_connectable_now(prev_doc)
+#             })
+
+#     # 2) other available doctors (connectable now) sorted by current_patients asc
+#     all_docs = DoctorProfile.query.filter(DoctorProfile.status == "Available").all()
+#     connectable = []
+#     for d in all_docs:
+#         # skip previous doc duplicate
+#         if patient.previous_doctor_id and d.id == patient.previous_doctor_id:
+#             continue
+#         if doctor_is_connectable_now(d):
+#             user = User.query.get(d.user_id)
+#             connectable.append({
+#                 'doctor_id': d.id,
+#                 'user_id': d.user_id,
+#                 'name': user.name if user else None,
+#                 'specialization': d.specialization,
+#                 'available_from': d.available_from,
+#                 'available_to': d.available_to,
+#                 'current_patients': d.current_patients,
+#                 'max_patients': d.max_patients,
+#                 'status': d.status,
+#                 'is_regular': False,
+#                 'connectable_now': True
+#             })
+#     # sort by workload (current_patients)
+#     connectable_sorted = sorted(connectable, key=lambda x: x['current_patients'])
+#     result.extend(connectable_sorted)
+
+#     return jsonify({'doctors': result}), 200
+
+# # ---------------- CONNECT TO DOCTOR ----------------
+# @app.route('/connect_doctor', methods=['POST'])
+# def connect_doctor():
+#     data = request.get_json()
+#     patient_id = data.get('patient_id')  or data.get('user_id')
+#     doctor_id = data.get('doctor_id')
+#     urgent = data.get('urgent', False)
+
+#     # ✅ Try both PatientProfile.id and PatientProfile.user_id
+#     patient = PatientProfile.query.filter(
+#         (PatientProfile.id == patient_id) | (PatientProfile.user_id == patient_id)
+#     ).first()
+
+#     if not patient:
+#         return jsonify({"error": "Patient not found"}), 404
+
+#     if urgent:
+#         # 🔍 Find least busy available doctor
+#         available_doctor = (
+#             DoctorProfile.query.filter_by(status="Available")
+#             .order_by(DoctorProfile.current_patients.asc())
+#             .first()
+#         )
+
+#         if available_doctor:
+#             available_doctor.current_patients += 1
+#             patient.previous_doctor_id = available_doctor.id
+#             # ✅ Create appointment record
+#             new_appointment = Appointment(
+#                 doctor_id=available_doctor.user_id,
+#                 patient_id=patient.user_id,
+#                 status="Active"
+#             )
+#             db.session.add(new_appointment)
+#             db.session.commit()
+#             return jsonify({
+#                 "message": "Connected to available doctor",
+#                 "doctor": User.query.get(available_doctor.user_id).name,
+#                 "appointment_id": new_appointment.id
+#             }), 200
+#         else:
+#             return jsonify({"error": "No available doctors"}), 404
+
+#     else:
+#         # 👩‍⚕️ Connect to specific/regular doctor
+#         if doctor_id:
+#             doctor = DoctorProfile.query.get(doctor_id)
+#             if doctor:
+#                 doctor.current_patients += 1
+#                 patient.previous_doctor_id = doctor.id
+
+#                  # ✅ Create appointment record
+#                 new_appointment = Appointment(
+#                     doctor_id=doctor.user_id,
+#                     patient_id=patient.user_id,
+#                     status="Active"
+#                 )
+#                 db.session.add(new_appointment)
+#                 db.session.commit()
+#                 return jsonify({
+#                     "message": "Connected to your regular doctor",
+#                     "doctor": User.query.get(doctor.user_id).name,
+#                     "appointment_id": new_appointment.id
+#                 }), 200
+#             else:
+#                 return jsonify({"error": "Doctor not found"}), 404
+#         else:
+#             return jsonify({"error": "No doctor specified"}), 400
+
+# # ---------------- DOCTOR VIEW PATIENTS (unchanged) ----------------
+# # @app.route('/doctor_patients/<int:doctor_user_id>', methods=['GET'])
+# # def doctor_patients(doctor_user_id):
+# #     # find all appointments where doctor_id == doctor_user_id
+# #     appointments = Appointment.query.filter_by(doctor_id=doctor_user_id).all()
+# #     result = []
+# #     for appt in appointments:
+# #         # appt.patient_id holds patient user_id
+# #         patient_profile = PatientProfile.query.filter_by(user_id=appt.patient_id).first()
+# #         patient_user = User.query.get(appt.patient_id)
+# #         if patient_profile and patient_user:
+# #             result.append({
+# #                 'patient_id': patient_user.id,
+# #                 'name': patient_user.name,
+# #                 'age': patient_profile.age,
+# #                 'condition': patient_profile.condition,
+# #                 'audio': patient_profile.audio_file,
+# #                 'model_output': patient_profile.model_output,
+# #                 'status': appt.status,
+# #                 'timestamp': appt.timestamp
+# #             })
+# #     return jsonify(result), 200
+# @app.route('/doctor/appointments/<int:doctor_id>', methods=['GET'])
+# def get_doctor_appointments(doctor_id):
+#     appointments = Appointment.query.filter_by(doctor_id=doctor_id, status="Active").all()
+#     data = [
+#         {
+#             "appointment_id": a.id,
+#             "patient_id": a.patient_id,
+#             "status": a.status
+#         } for a in appointments
+#     ]
+#     return jsonify(data)
+
+
+# # ---------------- USER PROFILE (unchanged) ----------------
+# @app.route('/profile/<int:user_id>', methods=['GET'])
+# def get_profile(user_id):
+#     user = User.query.get(user_id)
+#     if not user:
+#         return jsonify({'error': 'User not found'}), 404
+
+#     profile_data = {}
+#     if user.role == 'doctor':
+#         profile = DoctorProfile.query.filter_by(user_id=user_id).first()
+#         if profile:
+#             profile_data = {
+#                 'specialization': profile.specialization,
+#                 'experience': profile.experience,
+#                 'available_from': profile.available_from,
+#                 'available_to': profile.available_to,
+#                 'max_patients': profile.max_patients,
+#                 'current_patients': profile.current_patients,
+#                 'status': profile.status
+#             }
+#     elif user.role == 'patient':
+#         profile = PatientProfile.query.filter_by(user_id=user_id).first()
+#         if profile:
+#             profile_data = {
+#                 'age': profile.age,
+#                 'condition': profile.condition,
+#                 'doctor_id': profile.doctor_id,
+#                 'previous_doctor_id': profile.previous_doctor_id,
+#                 'model_output': profile.model_output
+#             }
+
+#     return jsonify({
+#         'id': user.id,
+#         'name': user.name,
+#         'email': user.email,
+#         'role': user.role,
+#         **profile_data
+#     }), 200
+
+
+# @socketio.on('join')
+# def handle_join(data):
+#     appointment_id = str(data.get('appointment_id'))
+#     user_name = data.get('user_name', 'Unknown')
+#     room = f"chat_{appointment_id}"
+
+#     print("🔔 JOIN request received:", {
+#         "appointment_id": appointment_id,
+#         "user_name": user_name,
+#         "socket_sid": request.sid
+#     })
+#     join_room(room)
+#     # print(f"✅ {user_name} joined room {appointment_id}")
+#     print(f"✅ Joined room on server: room={room} sid={request.sid} user_name={user_name}")
+#     emit('system_message', {'message': f"{user_name} joined the chat."}, room=room)
+
+
+# @socketio.on('send_message')
+# def handle_send_message(data):
+#     appointment_id = str(data.get('appointment_id'))
+#     sender_id = data.get('sender_id')
+#     message = data.get('message')
+#     room = f"chat_{appointment_id}"
+
+#     print("📨 send_message incoming:", {
+#         "appointment_id": appointment_id,
+#         "sender_id": sender_id,
+#         "message": message,
+#         "socket_sid": request.sid
+#     })
+#     # (store message if you want)
+#     emit('receive_message', {
+#         'sender_id': sender_id,
+#         'message': message,
+#         'timestamp': datetime.utcnow().isoformat()
+#     }, room=room)
+#     print(f"🔊 Emitted receive_message to room={room}")
+
+#     # store message
+#     chat_msg = ChatMessage(
+#         appointment_id=appointment_id,
+#         sender_id=sender_id,
+#         message=message
+#     )
+#     db.session.add(chat_msg)
+#     db.session.commit()
+
+#     # broadcast to everyone in the same room
+#     emit('receive_message', {
+#         'sender_id': sender_id,
+#         'message': message,
+#         'timestamp': datetime.utcnow().isoformat()
+#     }, room=room)
+
+
+
+# # ---------------- RUN ----------------
+# # if __name__ == '__main__':
+# #     socketio.run(app,host='127.0.0.1', port=8000, debug=True)
+
+# if __name__ == '__main__':
+#     import eventlet
+#     import eventlet.wsgi
+#     eventlet.monkey_patch()
+#     socketio.run(app, host='127.0.0.1', port=8000, debug=True, allow_unsafe_werkzeug=True)
+
+
+
+
+
 from flask import Flask, request, jsonify
 from flask_sqlalchemy import SQLAlchemy
 from flask_cors import CORS
 from werkzeug.utils import secure_filename
+from flask_socketio import SocketIO, emit, join_room
 import bcrypt
 import numpy as np
 import os
 import librosa
-from datetime import datetime, time, timedelta
+from datetime import datetime, timedelta
 from tensorflow.keras.models import load_model
-from flask_socketio import SocketIO, emit, join_room, leave_room
-from datetime import datetime
-
-
-
 
 # ---------------- APP CONFIG ----------------
 app = Flask(__name__)
-CORS(app)
+CORS(app, resources={r"/*": {"origins": "http://localhost:5173"}})
 
 socketio = SocketIO(app, cors_allowed_origins="*")
 
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///database.db'
+app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://root:%40Sahithi89@localhost/rhms'
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['UPLOAD_FOLDER'] = 'uploads'
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
-app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 db = SQLAlchemy(app)
 
 # ---------------- DATABASE MODELS ----------------
+
 class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    role = db.Column(db.String(10))  # patient / doctor
+    role = db.Column(db.String(20))
     name = db.Column(db.String(100))
     email = db.Column(db.String(100), unique=True)
-    password = db.Column(db.String(200))
-    profile_completed = db.Column(db.Boolean, default=False)
+    password = db.Column(db.LargeBinary(200))
 
 class PatientProfile(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, unique=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
     age = db.Column(db.Integer)
     condition = db.Column(db.String(200))
-    doctor_id = db.Column(db.Integer, nullable=True)            # current connected doctor (if any)
-    previous_doctor_id = db.Column(db.Integer, nullable=True)   # regular / previous doctor
-    urgent = db.Column(db.Boolean, default=False)
-    audio_file = db.Column(db.String(200))
     model_output = db.Column(db.String(200))
 
 class DoctorProfile(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, unique=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
     specialization = db.Column(db.String(200))
     experience = db.Column(db.Integer)
-    # Availability stored as HH:MM strings (24h). Use complete_profile to set.
-    available_from = db.Column(db.String(5), nullable=True)  # "09:00"
-    available_to = db.Column(db.String(5), nullable=True)    # "17:00"
-    max_patients = db.Column(db.Integer, default=5)
-    current_patients = db.Column(db.Integer, default=0)
-    status = db.Column(db.String(20), default="Available")  # Available / Unavailable
+    available_from = db.Column(db.Time)
+    available_to = db.Column(db.Time)
+    status = db.Column(db.String(20), default="Available")
 
 class Appointment(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    doctor_id = db.Column(db.Integer)
-    patient_id = db.Column(db.Integer)
-    status = db.Column(db.String(20), default="Pending")  # Pending / Active / Completed
-    timestamp = db.Column(db.DateTime, default=datetime.utcnow)
-
+    doctor_id = db.Column(db.Integer, db.ForeignKey('user.id'))
+    patient_id = db.Column(db.Integer, db.ForeignKey('user.id'))
+    status = db.Column(db.String(20), default="Active")
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
 class ChatMessage(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    appointment_id = db.Column(db.Integer, db.ForeignKey('appointment.id'), nullable=False)
-    sender_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
-    message = db.Column(db.Text, nullable=False)
+    appointment_id = db.Column(db.Integer, db.ForeignKey('appointment.id'))
+    sender_id = db.Column(db.Integer, db.ForeignKey('user.id'))
+    message = db.Column(db.Text)
     timestamp = db.Column(db.DateTime, default=datetime.utcnow)
 
+class Diagnosis(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    appointment_id = db.Column(db.Integer, db.ForeignKey('appointment.id'))
+    disease = db.Column(db.String(200))
+    prescription = db.Column(db.Text)
+    notes = db.Column(db.Text)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
 with app.app_context():
     db.create_all()
 
-# ---------------- LOAD DL MODEL ----------------
+# ---------------- LOAD MODEL ----------------
 MODEL_PATH = "model/model.keras"
-# load_model may fail if model path missing - keep try/except if needed
 model = load_model(MODEL_PATH)
-print("✅ Keras model loaded successfully!")
-
-# ---------------- HELPERS ----------------
-def parse_time_hhmm(s):
-    """Parse "HH:MM" into a time object. Return None if invalid/None."""
-    if not s:
-        return None
-    try:
-        return datetime.strptime(s, "%H:%M").time()
-    except Exception:
-        return None
-
-def doctor_is_connectable_now(doc_profile):
-    """
-    Returns True if current time is within [available_from - 1hour, available_to].
-    If doc has no availability set, returns False.
-    """
-    start = parse_time_hhmm(doc_profile.available_from)
-    end = parse_time_hhmm(doc_profile.available_to)
-    if not start or not end:
-        return False
-    now = datetime.now().time()
-    # compute start_allowed = start - 1 hour
-    # because time objects don't support subtraction directly, use datetime combine
-    today = datetime.today()
-    start_dt = datetime.combine(today, start) - timedelta(hours=1)
-    end_dt = datetime.combine(today, end)
-    now_dt = datetime.combine(today, now)
-    return start_dt <= now_dt <= end_dt and doc_profile.status == "Available"
 
 # ---------------- REGISTER ----------------
 @app.route('/register', methods=['POST'])
 def register():
-    data = request.get_json()
-    name = data.get('name')
-    email = data.get('email')
-    password = data.get('password')
-    role = data.get('role')
+    data = request.json
+    if User.query.filter_by(email=data['email']).first():
+        return jsonify({'error': 'Email already exists'}), 400
 
-    if User.query.filter_by(email=email).first():
-        return jsonify({'error': 'Email already registered'}), 400
+    hashed_pw = bcrypt.hashpw(data['password'].encode(), bcrypt.gensalt())
 
-    hashed_pw = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt())
-    new_user = User(name=name, email=email, password=hashed_pw, role=role)
-    db.session.add(new_user)
+    user = User(
+        name=data['name'],
+        email=data['email'],
+        password=hashed_pw,
+        role=data['role']
+    )
+    db.session.add(user)
     db.session.commit()
 
-    # create role-specific profile record
-    if role == 'patient':
-        profile = PatientProfile(user_id=new_user.id,
-                                 age=data.get('age'),
-                                 condition=data.get('condition'))
-        db.session.add(profile)
-    else:  # doctor
-        profile = DoctorProfile(
-            user_id=new_user.id,
-            specialization=data.get('specialization'),
-            experience=data.get('experience'),
-            available_from=data.get('available_from'),  # expect "HH:MM"
-            available_to=data.get('available_to'),      # expect "HH:MM"
-            max_patients=data.get('max_patients', 5)
+    if user.role == "patient":
+        profile = PatientProfile(
+            user_id=user.id,
+            age=data.get("age"),
         )
-        db.session.add(profile)
+    else:
+        profile = DoctorProfile(
+            user_id=user.id,
+            specialization=data.get("specialization"),
+            available_from=datetime.strptime(data.get("available_from"), "%H:%M").time(),
+            available_to=datetime.strptime(data.get("available_to"), "%H:%M").time()
+        )
 
-    new_user.profile_completed = True
+    db.session.add(profile)
     db.session.commit()
 
-    return jsonify({'message': 'Registration successful. Please login.'}), 201
+    return jsonify({'message': 'Registered successfully'}), 201
 
 # ---------------- LOGIN ----------------
 @app.route('/login', methods=['POST'])
 def login():
-    data = request.get_json()
-    email = data.get('email')
-    password = data.get('password')
-    role = data.get('role')
+    data = request.json
+    user = User.query.filter_by(email=data['email'], role=data['role']).first()
 
-    user = User.query.filter_by(email=email, role=role).first()
-    if not user:
-        return jsonify({'error': 'User not found for this role'}), 404
-
-    if bcrypt.checkpw(password.encode('utf-8'), user.password):
-        return jsonify({
-            'message': 'Login successful',
-            'user': {
-                'id': user.id,
-                'name': user.name,
-                'role': user.role,
-                'profile_completed': user.profile_completed
-            }
-        }), 200
-    else:
-        return jsonify({'error': 'Invalid credentials'}), 401
-
-# ---------------- COMPLETE PROFILE (update availability) ----------------
-@app.route('/complete_profile', methods=['POST'])
-def complete_profile():
-    data = request.get_json()
-    user_id = data.get('user_id')
-    user = User.query.get(user_id)
     if not user:
         return jsonify({'error': 'User not found'}), 404
 
-    if user.role == 'patient':
-        profile = PatientProfile.query.filter_by(user_id=user.id).first()
-        if not profile:
-            profile = PatientProfile(user_id=user.id)
-            db.session.add(profile)
-        profile.age = data.get('age')
-        profile.condition = data.get('condition')
-    else:
-        profile = DoctorProfile.query.filter_by(user_id=user.id).first()
-        if not profile:
-            profile = DoctorProfile(user_id=user.id)
-            db.session.add(profile)
-        profile.specialization = data.get('specialization')
-        profile.experience = data.get('experience')
-        # expect times as "HH:MM"
-        profile.available_from = data.get('available_from')
-        profile.available_to = data.get('available_to')
-        profile.max_patients = data.get('max_patients', profile.max_patients)
+    if bcrypt.checkpw(data['password'].encode(), user.password):
+        return jsonify({
+            "id": user.id,
+            "name": user.name,
+            "role": user.role
+        })
+    return jsonify({'error': 'Invalid password'}), 401
 
-    user.profile_completed = True
-    db.session.commit()
-    return jsonify({'message': 'Profile completed successfully'}), 200
-
-# ---------------- UPLOAD AUDIO (unchanged) ----------------
+# ---------------- AUDIO UPLOAD ----------------
 @app.route('/upload_audio', methods=['POST'])
 def upload_audio():
     user_id = request.form.get('user_id')
     file = request.files.get('file')
 
-    if not file:
-        return jsonify({'error': 'No file uploaded'}), 400
-
-    filename = secure_filename(file.filename)
-    filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+    filepath = os.path.join(app.config['UPLOAD_FOLDER'], secure_filename(file.filename))
     file.save(filepath)
 
-    try:
-        y, sr = librosa.load(filepath, sr=16000)
-        mel_spec = librosa.feature.melspectrogram(y=y, sr=sr, n_mels=64)
-        mel_spec_db = librosa.power_to_db(mel_spec, ref=np.max)
+    y, sr = librosa.load(filepath, sr=16000)
+    mel = librosa.feature.melspectrogram(y=y, sr=sr, n_mels=64)
+    mel_db = librosa.power_to_db(mel, ref=np.max)
 
-        if mel_spec_db.shape[1] < 38:
-            pad_width = 38 - mel_spec_db.shape[1]
-            mel_spec_db = np.pad(mel_spec_db, ((0, 0), (0, pad_width)), mode='constant')
-        else:
-            mel_spec_db = mel_spec_db[:, :38]
+    mel_db = mel_db[:, :38]
+    mel_db = (mel_db - np.min(mel_db)) / (np.max(mel_db) - np.min(mel_db))
+    input_data = np.expand_dims(np.stack([mel_db]*3, axis=-1), axis=0)
 
-        mel_spec_db = (mel_spec_db - np.min(mel_spec_db)) / (np.max(mel_spec_db) - np.min(mel_spec_db))
-        input_data = np.stack([mel_spec_db] * 3, axis=-1)
-        input_data = np.expand_dims(input_data, axis=0)
+    prediction = model.predict(input_data)
+    predicted_class = np.argmax(prediction)
 
-        prediction = model.predict(input_data)
-        predicted_class = np.argmax(prediction, axis=1)[0]
+    labels = {
+        0: "Asthma",
+        1: "Broncheostasis",
+        2: "Bronchiolitis",
+        3: "COPD",
+        4: "Healthy",
+        5: "Pneumonia",
+        6: "URTI"
+    }
 
-        label_map = {
-            0: "Asthma",
-            1: "Broncheostasis",
-            2: "Bronchiolitis",
-            3: "COPD",
-            4: "Healthy",
-            5: "Pneumonia",
-            6: "URTI"
-        }
-        output = label_map.get(predicted_class, "Unknown")
-
-    except Exception as e:
-        output = f"Error during model prediction: {str(e)}"
+    result = labels.get(predicted_class)
 
     patient = PatientProfile.query.filter_by(user_id=user_id).first()
-    if patient:
-        patient.audio_file = filepath
-        patient.model_output = output
-        db.session.commit()
-
-    return jsonify({'message': 'Audio uploaded successfully', 'prediction': output}), 200
-
-# ---------------- LIST DOCTORS FOR PATIENT ----------------
-@app.route('/available_doctors_for_patient/<int:patient_user_id>', methods=['GET'])
-def available_doctors_for_patient(patient_user_id):
-    """
-    Returns list of doctors for the patient to choose from:
-     - includes patient's previous doctor (if any) first (with availability info)
-     - then list of other doctors who are connectable now (one hour before available_from through available_to),
-       sorted by current_patients ascending (lowest workload first)
-    """
-    # fetch patient profile
-    patient = PatientProfile.query.filter_by(user_id=patient_user_id).first()
-    if not patient:
-        return jsonify({'error': 'Patient not found'}), 404
-
-    result = []
-
-    # 1) include previous doctor if exists
-    if patient.previous_doctor_id:
-        prev_doc = DoctorProfile.query.get(patient.previous_doctor_id)
-        if prev_doc:
-            user = User.query.get(prev_doc.user_id)
-            result.append({
-                'doctor_id': prev_doc.id,
-                'user_id': prev_doc.user_id,
-                'name': user.name if user else None,
-                'specialization': prev_doc.specialization,
-                'available_from': prev_doc.available_from,
-                'available_to': prev_doc.available_to,
-                'current_patients': prev_doc.current_patients,
-                'max_patients': prev_doc.max_patients,
-                'status': prev_doc.status,
-                'is_regular': True,
-                'connectable_now': doctor_is_connectable_now(prev_doc)
-            })
-
-    # 2) other available doctors (connectable now) sorted by current_patients asc
-    all_docs = DoctorProfile.query.filter(DoctorProfile.status == "Available").all()
-    connectable = []
-    for d in all_docs:
-        # skip previous doc duplicate
-        if patient.previous_doctor_id and d.id == patient.previous_doctor_id:
-            continue
-        if doctor_is_connectable_now(d):
-            user = User.query.get(d.user_id)
-            connectable.append({
-                'doctor_id': d.id,
-                'user_id': d.user_id,
-                'name': user.name if user else None,
-                'specialization': d.specialization,
-                'available_from': d.available_from,
-                'available_to': d.available_to,
-                'current_patients': d.current_patients,
-                'max_patients': d.max_patients,
-                'status': d.status,
-                'is_regular': False,
-                'connectable_now': True
-            })
-    # sort by workload (current_patients)
-    connectable_sorted = sorted(connectable, key=lambda x: x['current_patients'])
-    result.extend(connectable_sorted)
-
-    return jsonify({'doctors': result}), 200
-
-# ---------------- CONNECT TO DOCTOR ----------------
-@app.route('/connect_doctor', methods=['POST'])
-def connect_doctor():
-    data = request.get_json()
-    patient_id = data.get('patient_id')  or data.get('user_id')
-    doctor_id = data.get('doctor_id')
-    urgent = data.get('urgent', False)
-
-    # ✅ Try both PatientProfile.id and PatientProfile.user_id
-    patient = PatientProfile.query.filter(
-        (PatientProfile.id == patient_id) | (PatientProfile.user_id == patient_id)
-    ).first()
-
-    if not patient:
-        return jsonify({"error": "Patient not found"}), 404
-
-    if urgent:
-        # 🔍 Find least busy available doctor
-        available_doctor = (
-            DoctorProfile.query.filter_by(status="Available")
-            .order_by(DoctorProfile.current_patients.asc())
-            .first()
-        )
-
-        if available_doctor:
-            available_doctor.current_patients += 1
-            patient.previous_doctor_id = available_doctor.id
-            # ✅ Create appointment record
-            new_appointment = Appointment(
-                doctor_id=available_doctor.user_id,
-                patient_id=patient.user_id,
-                status="Active"
-            )
-            db.session.add(new_appointment)
-            db.session.commit()
-            return jsonify({
-                "message": "Connected to available doctor",
-                "doctor": User.query.get(available_doctor.user_id).name,
-                "appointment_id": new_appointment.id
-            }), 200
-        else:
-            return jsonify({"error": "No available doctors"}), 404
-
-    else:
-        # 👩‍⚕️ Connect to specific/regular doctor
-        if doctor_id:
-            doctor = DoctorProfile.query.get(doctor_id)
-            if doctor:
-                doctor.current_patients += 1
-                patient.previous_doctor_id = doctor.id
-
-                 # ✅ Create appointment record
-                new_appointment = Appointment(
-                    doctor_id=doctor.user_id,
-                    patient_id=patient.user_id,
-                    status="Active"
-                )
-                db.session.add(new_appointment)
-                db.session.commit()
-                return jsonify({
-                    "message": "Connected to your regular doctor",
-                    "doctor": User.query.get(doctor.user_id).name,
-                    "appointment_id": new_appointment.id
-                }), 200
-            else:
-                return jsonify({"error": "Doctor not found"}), 404
-        else:
-            return jsonify({"error": "No doctor specified"}), 400
-
-# ---------------- DOCTOR VIEW PATIENTS (unchanged) ----------------
-@app.route('/doctor_patients/<int:doctor_user_id>', methods=['GET'])
-def doctor_patients(doctor_user_id):
-    # find all appointments where doctor_id == doctor_user_id
-    appointments = Appointment.query.filter_by(doctor_id=doctor_user_id).all()
-    result = []
-    for appt in appointments:
-        # appt.patient_id holds patient user_id
-        patient_profile = PatientProfile.query.filter_by(user_id=appt.patient_id).first()
-        patient_user = User.query.get(appt.patient_id)
-        if patient_profile and patient_user:
-            result.append({
-                'patient_id': patient_user.id,
-                'name': patient_user.name,
-                'age': patient_profile.age,
-                'condition': patient_profile.condition,
-                'audio': patient_profile.audio_file,
-                'model_output': patient_profile.model_output,
-                'status': appt.status,
-                'timestamp': appt.timestamp
-            })
-    return jsonify(result), 200
-
-# ---------------- USER PROFILE (unchanged) ----------------
-@app.route('/profile/<int:user_id>', methods=['GET'])
-def get_profile(user_id):
-    user = User.query.get(user_id)
-    if not user:
-        return jsonify({'error': 'User not found'}), 404
-
-    profile_data = {}
-    if user.role == 'doctor':
-        profile = DoctorProfile.query.filter_by(user_id=user_id).first()
-        if profile:
-            profile_data = {
-                'specialization': profile.specialization,
-                'experience': profile.experience,
-                'available_from': profile.available_from,
-                'available_to': profile.available_to,
-                'max_patients': profile.max_patients,
-                'current_patients': profile.current_patients,
-                'status': profile.status
-            }
-    elif user.role == 'patient':
-        profile = PatientProfile.query.filter_by(user_id=user_id).first()
-        if profile:
-            profile_data = {
-                'age': profile.age,
-                'condition': profile.condition,
-                'doctor_id': profile.doctor_id,
-                'previous_doctor_id': profile.previous_doctor_id,
-                'model_output': profile.model_output
-            }
-
-    return jsonify({
-        'id': user.id,
-        'name': user.name,
-        'email': user.email,
-        'role': user.role,
-        **profile_data
-    }), 200
-
-
-@socketio.on('join')
-def handle_join(data):
-    appointment_id = str(data.get('appointment_id'))
-    user_name = data.get('user_name', 'Unknown')
-    room = f"chat_{appointment_id}"
-
-    join_room(room)
-    print(f"✅ {user_name} joined room {appointment_id}")
-    emit('system_message', {'message': f"{user_name} joined the chat."}, room=room)
-
-
-@socketio.on('send_message')
-def handle_send_message(data):
-    appointment_id = str(data.get('appointment_id'))
-    sender_id = data.get('sender_id')
-    message = data.get('message')
-    room = f"chat_{appointment_id}"
-
-    # store message
-    chat_msg = ChatMessage(
-        appointment_id=appointment_id,
-        sender_id=sender_id,
-        message=message
-    )
-    db.session.add(chat_msg)
+    patient.model_output = result
     db.session.commit()
 
-    # broadcast to everyone in the same room
+    return jsonify({'prediction': result})
+
+# ---------------- AVAILABLE DOCTORS ----------------
+@app.route('/available_doctors/<int:patient_id>')
+def available_doctors(patient_id):
+    patient = PatientProfile.query.filter_by(user_id=patient_id).first()
+
+    if patient.model_output == "Healthy":
+        return jsonify({'message': 'No doctor required'})
+
+    now = datetime.now().time()
+    doctors = DoctorProfile.query.filter(
+        DoctorProfile.available_from <= now,
+        DoctorProfile.available_to >= now,
+        DoctorProfile.status == "Available"
+    ).all()
+
+    result = []
+    for d in doctors:
+        user = User.query.get(d.user_id)
+        result.append({
+            "doctor_user_id": d.user_id,
+            "name": user.name,
+            "specialization": d.specialization
+        })
+
+    return jsonify(result)
+
+# ---------------- CONNECT ----------------
+@app.route('/connect', methods=['POST'])
+def connect():
+    data = request.json
+    appointment = Appointment(
+        doctor_id=data['doctor_id'],
+        patient_id=data['patient_id']
+    )
+    db.session.add(appointment)
+    db.session.commit()
+
+    return jsonify({'appointment_id': appointment.id})
+
+
+
+#-------------------APPOINTMENTS---------------------
+@app.route('/doctor/appointments/<int:doctor_id>')
+def doctor_appointments(doctor_id):
+    appointments = Appointment.query.filter_by(
+        doctor_id=doctor_id,
+        status="Active"
+    ).all()
+
+    result = []
+
+    for apt in appointments:
+        patient_user = User.query.get(apt.patient_id)
+        patient_profile = PatientProfile.query.filter_by(
+            user_id=apt.patient_id
+        ).first()
+
+        result.append({
+            "appointment_id": apt.id,
+            "patient_id": apt.patient_id,
+            "name": patient_user.name,
+            "age": patient_profile.age if patient_profile else None,
+            "condition": patient_profile.condition if patient_profile else None,
+            "model_output": patient_profile.model_output if patient_profile else None
+        })
+
+    return jsonify(result)
+
+
+# ---------------- CHAT ----------------
+@socketio.on('join')
+def join(data):
+    room = f"chat_{data['appointment_id']}"
+    join_room(room)
+
+@socketio.on('send_message')
+def send_message(data):
+    room = f"chat_{data['appointment_id']}"
+
+    msg = ChatMessage(
+        appointment_id=data['appointment_id'],
+        sender_id=data['sender_id'],
+        message=data['message']
+    )
+    db.session.add(msg)
+    db.session.commit()
+
     emit('receive_message', {
-        'sender_id': sender_id,
-        'message': message,
+        'sender_id': data['sender_id'],
+        'message': data['message'],
         'timestamp': datetime.utcnow().isoformat()
     }, room=room)
 
+# ---------------- COMPLETE CONSULTATION ----------------
+@app.route('/complete_consultation', methods=['POST'])
+def complete_consultation():
+    data = request.json
 
+    diagnosis = Diagnosis(
+        appointment_id=data['appointment_id'],
+        disease=data['disease'],
+        prescription=data['prescription'],
+        notes=data.get('notes')
+    )
+    db.session.add(diagnosis)
+
+    appointment = Appointment.query.get(data['appointment_id'])
+    appointment.status = "Completed"
+
+    db.session.commit()
+
+    return jsonify({'message': 'Consultation completed and diagnosis saved'})
 
 # ---------------- RUN ----------------
-# if __name__ == '__main__':
-#     socketio.run(app,host='127.0.0.1', port=8000, debug=True)
-
 if __name__ == '__main__':
-    import eventlet
-    import eventlet.wsgi
-    socketio.run(app, host='127.0.0.1', port=8000, debug=True, allow_unsafe_werkzeug=True)
-
-
+    socketio.run(app, host='127.0.0.1', port=8000, debug=True)

@@ -231,8 +231,6 @@ const Register = () => {
     email: "",
     password: "",
     confirmPassword: "",
-    patientId: "",
-    doctorId: "",
     specialization: "",
     available_from: "",
     available_to: "",
@@ -345,15 +343,6 @@ const Register = () => {
           {role === "patient" ? (
             <>
               <input
-                type="text"
-                name="patientId"
-                placeholder="Patient ID"
-                onChange={handleChange}
-                value={formData.patientId}
-                className="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-400"
-                required
-              />
-              <input
                 type="number"
                 name="age"
                 placeholder="Age"
@@ -376,15 +365,6 @@ const Register = () => {
             </>
           ) : (
             <>
-              <input
-                type="text"
-                name="doctorId"
-                placeholder="Doctor ID"
-                onChange={handleChange}
-                value={formData.doctorId}
-                className="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-400"
-                required
-              />
               <input
                 type="text"
                 name="specialization"

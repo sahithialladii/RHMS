@@ -113,13 +113,13 @@ const Login = () => {
         role,
       });
 
-      const { user } = response.data;
+      const  user  = response.data;
 
       // Save login info in localStorage
       localStorage.setItem("token", "dummy-token"); // Replace with JWT later
       localStorage.setItem("user_id", user.id);
       localStorage.setItem("role", user.role);
-      localStorage.setItem("profile_completed", user.profile_completed);
+
 
       // // ✅ Check profile completion
       // if (!user.profile_completed) {
@@ -151,11 +151,13 @@ const Login = () => {
 
         const roleNormalized = user.role?.toLowerCase().trim();
 
-        if (!user.profile_completed) {
-           navigate(roleNormalized === "doctor" ? "/doctor/completeprofile" : "/patient/completeprofile");
-          } else {
-          navigate(roleNormalized === "doctor" ? "/doctor" : "/patient");
-      }
+      //   if (!user.profile_completed) {
+      //      navigate(roleNormalized === "doctor" ? "/doctor/completeprofile" : "/patient/completeprofile");
+      //     } else {
+      //     navigate(roleNormalized === "doctor" ? "/doctor" : "/patient");
+      // }
+
+       navigate(roleNormalized === "doctor" ? "/doctor" : "/patient");
 
 
 
