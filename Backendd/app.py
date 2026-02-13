@@ -1800,9 +1800,36 @@ def available_doctors(patient_id):
     return jsonify(result)
 
 # ---------------- CONNECT ----------------
+# @app.route('/connect', methods=['POST'])
+# def connect():
+#     data = request.json
+#     appointment = Appointment(
+#         doctor_id=data['doctor_id'],
+#         patient_id=data['patient_id']
+#     )
+#     db.session.add(appointment)
+#     db.session.commit()
+
+#     return jsonify({'appointment_id': appointment.id})
+
 @app.route('/connect', methods=['POST'])
 def connect():
     data = request.json
+
+    # Check if active appointment already exists
+    existing = Appointment.query.filter_by(
+        doctor_id=data['doctor_id'],
+        patient_id=data['patient_id'],
+        status="Active"
+    ).first()
+
+    if existing:
+        return jsonify({
+            'appointment_id': existing.id,
+            'message': 'Existing appointment returned'
+        })
+
+    # Otherwise create new
     appointment = Appointment(
         doctor_id=data['doctor_id'],
         patient_id=data['patient_id']
@@ -1810,11 +1837,33 @@ def connect():
     db.session.add(appointment)
     db.session.commit()
 
-    return jsonify({'appointment_id': appointment.id})
+    return jsonify({
+        'appointment_id': appointment.id,
+        'message': 'New appointment created'
+    })
+
 
 
 
 #-------------------APPOINTMENTS---------------------
+@app.route('/appointment/<int:appointment_id>')
+def get_appointment_details(appointment_id):
+    appointment = Appointment.query.get(appointment_id)
+
+    if not appointment:
+        return jsonify({'error': 'Appointment not found'}), 404
+
+    doctor = User.query.get(appointment.doctor_id)
+    patient = User.query.get(appointment.patient_id)
+
+    return jsonify({
+        "doctor_id": doctor.id,
+        "doctor_name": doctor.name,
+        "patient_id": patient.id,
+        "patient_name": patient.name,
+        "status": appointment.status
+    })
+
 @app.route('/doctor/appointments/<int:doctor_id>')
 def doctor_appointments(doctor_id):
     appointments = Appointment.query.filter_by(
@@ -1842,6 +1891,8 @@ def doctor_appointments(doctor_id):
     return jsonify(result)
 
 
+
+
 # ---------------- CHAT ----------------
 @socketio.on('join')
 def join(data):
@@ -1867,24 +1918,112 @@ def send_message(data):
     }, room=room)
 
 # ---------------- COMPLETE CONSULTATION ----------------
+# @app.route('/complete_consultation', methods=['POST'])
+# def complete_consultation():
+#     data = request.json
+
+#     diagnosis = Diagnosis(
+#         appointment_id=data['appointment_id'],
+#         disease=data['disease'],
+#         prescription=data['prescription'],
+#         notes=data.get('notes')
+#     )
+#     db.session.add(diagnosis)
+
+#     appointment = Appointment.query.get(data['appointment_id'])
+#     appointment.status = "Completed"
+
+#     db.session.commit()
+
+#     return jsonify({'message': 'Consultation completed and diagnosis saved'})
+
+
+
+
+# @app.route('/complete_consultation', methods=['POST'])
+# def complete_consultation():
+#     data = request.json
+
+#     appointment = Appointment.query.get(data['appointment_id'])
+#     if not appointment:
+#         return jsonify({'error': 'Appointment not found'}), 404
+
+#     # Save diagnosis record
+#     diagnosis = Diagnosis(
+#         appointment_id=data['appointment_id'],
+#         disease=data['disease'],
+#         prescription=data['prescription'],
+#         notes=data.get('notes')
+#     )
+#     db.session.add(diagnosis)
+
+#     # Update patient medical history
+#     patient_profile = PatientProfile.query.filter_by(
+#         user_id=appointment.patient_id
+#     ).first()
+
+#     if patient_profile:
+#         patient_profile.condition = data['disease']
+
+#     # Mark appointment completed
+#     appointment.status = "Completed"
+
+#     db.session.commit()
+
+#     return jsonify({'message': 'Consultation completed successfully'})
+
+
+
 @app.route('/complete_consultation', methods=['POST'])
 def complete_consultation():
     data = request.json
+    appointment_id = data['appointment_id']
 
+    appointment = Appointment.query.get(appointment_id)
+    if not appointment:
+        return jsonify({'error': 'Appointment not found'}), 404
+
+    # Save diagnosis
     diagnosis = Diagnosis(
-        appointment_id=data['appointment_id'],
+        appointment_id=appointment_id,
         disease=data['disease'],
         prescription=data['prescription'],
         notes=data.get('notes')
     )
     db.session.add(diagnosis)
 
-    appointment = Appointment.query.get(data['appointment_id'])
+    # Update patient condition
+    patient_profile = PatientProfile.query.filter_by(
+        user_id=appointment.patient_id
+    ).first()
+
+    if patient_profile:
+        patient_profile.condition = data['disease']
+
+    # Mark appointment completed
     appointment.status = "Completed"
 
     db.session.commit()
 
-    return jsonify({'message': 'Consultation completed and diagnosis saved'})
+    # 🔥 IMPORTANT PART — Notify both users
+    room = f"chat_{appointment_id}"
+
+    socketio.emit(
+        "consultation_finished",
+        {
+            "appointment_id": appointment_id,
+            "status": "Completed"
+        },
+        room=room
+    )
+
+    return jsonify({'message': 'Consultation completed successfully'})
+
+
+
+
+
+
 
 # ---------------- RUN ----------------
 if __name__ == '__main__':
