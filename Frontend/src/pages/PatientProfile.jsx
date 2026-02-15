@@ -1,197 +1,14 @@
-// // import React from "react";
-// // import { useNavigate } from "react-router-dom";
-
-// // const PatientProfile = () => {
-// //   const navigate = useNavigate();
-
-// //   // Example patient data (you can replace this with API data)
-// //   const patient = {
-// //     name: "Aarav Sharma",
-// //     age: 25,
-// //     email: "aarav@example.com",
-// //     phone: "+91 9876543210",
-// //     gender: "Male",
-// //     condition: "Fever",
-// //     address: "Hyderabad, Telangana, India",
-// //     history: [
-// //       { date: "2025-10-28", doctor: "Dr. Meera Rao", notes: "Mild fever, paracetamol prescribed." },
-// //       { date: "2025-09-15", doctor: "Dr. Arjun Nair", notes: "Routine checkup, normal vitals." },
-// //       { date: "2025-08-02", doctor: "Dr. Kavita Sharma", notes: "Cough and cold, antibiotics course." },
-// //     ],
-// //   };
-
-// //   return (
-// //     <div className="min-h-screen bg-gray-100 flex flex-col">
-// //       {/* 🔹 Top Navigation */}
-// //       <nav className="bg-blue-700 text-white flex justify-between items-center px-6 py-3 shadow-md">
-// //         <h1
-// //           onClick={() => navigate("/")}
-// //           className="text-2xl font-bold cursor-pointer hover:text-blue-200 transition"
-// //         >
-// //           🏥 Patient Dashboard
-// //         </h1>
-// //         <button
-// //           onClick={() => navigate("/patient/edit")}
-// //           className="bg-white text-blue-700 font-medium px-4 py-2 rounded-lg hover:bg-blue-100 transition"
-// //         >
-// //           Edit Profile
-// //         </button>
-// //       </nav>
-
-// //       {/* 🔹 Profile Section */}
-// //       <div className="flex-1 flex justify-center items-center p-8">
-// //         <div className="bg-white rounded-2xl shadow-lg w-full max-w-3xl p-8 border">
-// //           <div className="flex justify-between items-center mb-6">
-// //             <h2 className="text-2xl font-bold text-gray-800">Patient Profile</h2>
-// //             <button
-// //               onClick={() => navigate("/patient")}
-// //               className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition"
-// //             >
-// //               Back to Dashboard
-// //             </button>
-// //           </div>
-
-// //           <div className="grid grid-cols-2 gap-6">
-// //             <div>
-// //               <p className="text-gray-600 mb-2"><strong>Name:</strong> {patient.name}</p>
-// //               <p className="text-gray-600 mb-2"><strong>Age:</strong> {patient.age}</p>
-// //               <p className="text-gray-600 mb-2"><strong>Gender:</strong> {patient.gender}</p>
-// //               <p className="text-gray-600 mb-2"><strong>Condition:</strong> {patient.condition}</p>
-// //             </div>
-// //             <div>
-// //               <p className="text-gray-600 mb-2"><strong>Email:</strong> {patient.email}</p>
-// //               <p className="text-gray-600 mb-2"><strong>Phone:</strong> {patient.phone}</p>
-// //               <p className="text-gray-600 mb-2"><strong>Address:</strong> {patient.address}</p>
-// //             </div>
-// //           </div>
-
-// //           <hr className="my-6 border-gray-300" />
-
-// //           {/* 🔹 Medical History */}
-// //           <div>
-// //             <h3 className="text-xl font-semibold text-gray-800 mb-3">Medical History</h3>
-// //             <ul className="divide-y divide-gray-200">
-// //               {patient.history.map((record, index) => (
-// //                 <li key={index} className="py-3">
-// //                   <p className="text-gray-700">
-// //                     <strong>Date:</strong> {record.date}
-// //                   </p>
-// //                   <p className="text-gray-700">
-// //                     <strong>Doctor:</strong> {record.doctor}
-// //                   </p>
-// //                   <p className="text-gray-600 italic">“{record.notes}”</p>
-// //                 </li>
-// //               ))}
-// //             </ul>
-// //           </div>
-
-// //           <hr className="my-6 border-gray-300" />
-
-// //           {/* 🔹 Recent Doctor Chats */}
-// //           <div>
-// //             <h3 className="text-xl font-semibold text-gray-800 mb-3">Recent Doctor Chats</h3>
-// //             <ul className="list-disc pl-6 text-gray-700">
-// //               <li>Dr. Meera Rao — Follow-up scheduled on Nov 3</li>
-// //               <li>Dr. Arjun Nair — Shared lab results</li>
-// //             </ul>
-// //           </div>
-// //         </div>
-// //       </div>
-// //     </div>
-// //   );
-// // };
-
-// // export default PatientProfile;
-
-
-
-
-// import React from "react";
-
-// const PatientProfile = () => {
-//   const patient = {
-//     name: "Ravi Kumar",
-//     age: 29,
-//     gender: "Male",
-//     email: "ravi.kumar@example.com",
-//     phone: "+91 98765 67890",
-//     address: "Banjara Hills, Hyderabad",
-//     medicalHistory: "Asthma (diagnosed 2018), occasional shortness of breath.",
-//     recentVisit: "10 Oct 2025 - Consultation for mild wheezing.",
-//     profileImage:
-//       "https://cdn-icons-png.flaticon.com/512/2922/2922510.png", // Placeholder avatar
-//   };
-
-//   return (
-//     <div className="min-h-screen bg-gradient-to-b from-green-50 to-green-100 flex justify-center items-center p-6">
-//       <div className="bg-white shadow-lg rounded-2xl w-full max-w-3xl p-8">
-//         {/* Profile Header */}
-//         <div className="flex flex-col md:flex-row items-center border-b pb-6">
-//           <img
-//             src={patient.profileImage}
-//             alt="Patient Profile"
-//             className="w-32 h-32 rounded-full border-4 border-green-500 shadow-md"
-//           />
-//           <div className="md:ml-6 mt-4 md:mt-0 text-center md:text-left">
-//             <h2 className="text-2xl font-semibold text-green-700">
-//               {patient.name}
-//             </h2>
-//             <p className="text-gray-600 text-lg">Age: {patient.age}</p>
-//             <p className="text-gray-600 text-lg">Gender: {patient.gender}</p>
-//             <p className="text-sm text-gray-500 mt-1">{patient.address}</p>
-//           </div>
-//         </div>
-
-//         {/* Profile Info */}
-//         <div className="mt-6 space-y-3">
-//           <div>
-//             <h3 className="font-semibold text-gray-700">Email:</h3>
-//             <p className="text-gray-600">{patient.email}</p>
-//           </div>
-
-//           <div>
-//             <h3 className="font-semibold text-gray-700">Phone:</h3>
-//             <p className="text-gray-600">{patient.phone}</p>
-//           </div>
-
-//           <div>
-//             <h3 className="font-semibold text-gray-700">Medical History:</h3>
-//             <p className="text-gray-600">{patient.medicalHistory}</p>
-//           </div>
-
-//           <div>
-//             <h3 className="font-semibold text-gray-700">Recent Visit:</h3>
-//             <p className="text-gray-600">{patient.recentVisit}</p>
-//           </div>
-//         </div>
-
-//         {/* Edit Button */}
-//         <div className="mt-8 flex justify-end">
-//           <button className="px-5 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 shadow-md transition">
-//             Edit Profile
-//           </button>
-//         </div>
-//       </div>
-//     </div>
-//   );
-// };
-
-// export default PatientProfile;
-
-
-
-
-
-
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 
 const PatientProfile = () => {
   const [patient, setPatient] = useState(null);
   const [error, setError] = useState("");
+  const [editMode, setEditMode] = useState(false);
+  const [reportFile, setReportFile] = useState(null);
+  const userId = localStorage.getItem("user_id");
 
   useEffect(() => {
-    const userId = localStorage.getItem("user_id");
     if (!userId) {
       setError("User not logged in");
       return;
@@ -199,7 +16,9 @@ const PatientProfile = () => {
 
     const fetchProfile = async () => {
       try {
-        const response = await axios.get(`http://127.0.0.1:8000/profile/${userId}`);
+        const response = await axios.get(
+          `http://127.0.0.1:8000/profile/${userId}`
+        );
         setPatient(response.data);
       } catch (err) {
         setError("Failed to load patient profile");
@@ -207,31 +26,246 @@ const PatientProfile = () => {
     };
 
     fetchProfile();
-  }, []);
+  }, [userId]);
 
-  if (error) return <p className="text-center text-red-500 mt-8">{error}</p>;
-  if (!patient) return <p className="text-center mt-8">Loading...</p>;
+  const handleSave = async () => {
+    try {
+      await axios.put("http://127.0.0.1:8000/profile/update", {
+        user_id: userId,
+        name: patient.name,
+        age: patient.age,
+        // gender: patient.gender,
+        previous_history: patient.previous_history,
+      });
+
+      setEditMode(false);
+      alert("Profile updated successfully");
+    } catch (err) {
+      alert("Failed to update profile");
+    }
+  };
+
+  const handleReportUpload = async () => {
+    if (!reportFile) {
+      alert("Select a file first");
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append("file", reportFile);
+    formData.append("user_id", userId);
+
+    try {
+      await axios.post(
+        "http://127.0.0.1:8000/upload_report",
+        formData
+      );
+      alert("Report uploaded successfully");
+    } catch (err) {
+      alert("Upload failed");
+    }
+  };
+
+  if (error)
+    return <p className="text-center text-red-500 mt-8">{error}</p>;
+  if (!patient)
+    return <p className="text-center mt-8">Loading...</p>;
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-green-50 to-green-100 flex justify-center items-center p-6">
-      <div className="bg-white shadow-lg rounded-2xl w-full max-w-3xl p-8">
-        <div className="flex flex-col md:flex-row items-center border-b pb-6">
-          <img
-            src="https://cdn-icons-png.flaticon.com/512/2922/2922510.png"
-            alt="Patient Profile"
-            className="w-32 h-32 rounded-full border-4 border-green-500 shadow-md"
-          />
-          <div className="md:ml-6 mt-4 md:mt-0 text-center md:text-left">
-            <h2 className="text-2xl font-semibold text-green-700">{patient.name}</h2>
-            <p className="text-gray-600 text-lg">Condition: {patient.condition}</p>
+    <div className="min-h-screen bg-slate-50 p-8">
+      <div className="max-w-4xl mx-auto bg-white shadow-xl rounded-3xl p-8">
+
+        {/* HEADER */}
+        <div className="flex justify-between items-center border-b pb-6">
+          <div>
+            <h2 className="text-3xl font-bold text-indigo-700">
+              {patient.name}
+            </h2>
+            <p className="text-gray-500">
+              AI Prediction:{" "}
+              <span className="font-semibold text-indigo-600">
+                {patient.model_output || "N/A"}
+              </span>
+            </p>
+          </div>
+
+          <div className="space-x-3">
+            {editMode ? (
+              <>
+                <button
+                  onClick={handleSave}
+                  className="bg-green-600 text-white px-4 py-2 rounded-lg"
+                >
+                  Save
+                </button>
+                <button
+                  onClick={() => setEditMode(false)}
+                  className="bg-gray-400 text-white px-4 py-2 rounded-lg"
+                >
+                  Cancel
+                </button>
+              </>
+            ) : (
+              <button
+                onClick={() => setEditMode(true)}
+                className="bg-indigo-600 text-white px-4 py-2 rounded-lg"
+              >
+                Edit Profile
+              </button>
+            )}
           </div>
         </div>
 
-        <div className="mt-6 space-y-3">
-          <p><strong>Email:</strong> {patient.email}</p>
-          <p><strong>Age:</strong> {patient.age}</p>
-          <p><strong>Diagnosis:</strong> {patient.model_output || "N/A"}</p>
+        {/* BASIC INFO */}
+        <div className="mt-6 space-y-4">
+          <div>
+            <strong>Email:</strong> {patient.email}
+          </div>
+
+          <div>
+            <strong>Name:</strong>{" "}
+            {editMode ? (
+              <input
+                className="border p-2 rounded ml-2"
+                value={patient.name}
+                onChange={(e) =>
+                  setPatient({ ...patient, name: e.target.value })
+                }
+              />
+            ) : (
+              patient.name
+            )}
+          </div>
+
+          <div>
+            <strong>Age:</strong>{" "}
+            {editMode ? (
+              <input
+                type="number"
+                className="border p-2 rounded ml-2"
+                value={patient.age || ""}
+                onChange={(e) =>
+                  setPatient({ ...patient, age: e.target.value })
+                }
+              />
+            ) : (
+              patient.age
+            )}
+          </div>
+
+          {/* <div>
+            <strong>Gender:</strong>{" "}
+            {editMode ? (
+              <select
+                className="border p-2 rounded ml-2"
+                value={patient.gender || ""}
+                onChange={(e) =>
+                  setPatient({ ...patient, gender: e.target.value })
+                }
+              >
+                <option value="">Select</option>
+                <option value="Male">Male</option>
+                <option value="Female">Female</option>
+                <option value="Other">Other</option>
+              </select>
+            ) : (
+              patient.gender || "N/A"
+            )}
+          </div> */}
+
+          <div>
+            <strong>Previous Respiratory History:</strong>
+            {editMode ? (
+              <textarea
+                className="border p-2 rounded w-full mt-2"
+                rows="3"
+                value={patient.previous_history || ""}
+                onChange={(e) =>
+                  setPatient({
+                    ...patient,
+                    previous_history: e.target.value,
+                  })
+                }
+              />
+            ) : (
+              <p className="mt-2 text-gray-600">
+                {patient.previous_history || "No history provided"}
+              </p>
+            )}
+          </div>
         </div>
+
+        {/* DIAGNOSIS HISTORY TABLE */}
+        <div className="mt-10">
+          <h3 className="text-xl font-bold mb-4">
+            Medical Condition History
+          </h3>
+
+          <div className="overflow-x-auto">
+            <table className="w-full border border-gray-200 rounded-lg">
+              <thead className="bg-gray-100">
+                <tr>
+                  <th className="p-3 border">Date</th>
+                  <th className="p-3 border">AI Prediction</th>
+                  <th className="p-3 border">Doctor Diagnosis</th>
+                  <th className="p-3 border">Prescription</th>
+                </tr>
+              </thead>
+              <tbody>
+                {patient.diagnosis_history &&
+                patient.diagnosis_history.length > 0 ? (
+                  patient.diagnosis_history.map((item, index) => (
+                    <tr key={index} className="text-center">
+                      <td className="p-3 border">{item.date}</td>
+                      <td className="p-3 border">
+                        {patient.model_output}
+                      </td>
+                      <td className="p-3 border">
+                        {item.disease}
+                      </td>
+                      <td className="p-3 border">
+                        {item.prescription}
+                      </td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td
+                      colSpan="4"
+                      className="p-4 text-center text-gray-500"
+                    >
+                      No consultations yet
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        {/* MEDICAL REPORT UPLOAD */}
+        <div className="mt-10">
+          <h3 className="text-xl font-bold mb-4">
+            Upload Medical Reports
+          </h3>
+
+          <div className="flex gap-4">
+            <input
+              type="file"
+              onChange={(e) =>
+                setReportFile(e.target.files[0])
+              }
+              className="border p-2 rounded"
+            />
+            <button
+              onClick={handleReportUpload}
+              className="bg-indigo-600 text-white px-4 py-2 rounded-lg"
+            >
+              Upload
+            </button>
+          </div>
+        </div>
+
       </div>
     </div>
   );
