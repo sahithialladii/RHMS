@@ -2,7 +2,8 @@ import React, { useEffect, useState } from "react";
 import { useLocation, useParams, useNavigate } from "react-router-dom";
 import io from "socket.io-client";
 
-const socket = io("http://127.0.0.1:8000", {
+// const socket = io("http://127.0.0.1:8000", {
+const socket = io("https://rhms-b9d9.onrender.com", {
   transports: ["websocket"],
   autoConnect: false,
 });
@@ -51,7 +52,7 @@ const ChatRoom = () => {
       setMessages((prev) => [...prev, data]);
     });
     //  fetch(`http://127.0.0.1:8000/appointment/${appointmentId}`)
-     fetch(`https://rhms-b9d9.onrender.com/appointment/${appointmentId}`)
+    fetch(`https://rhms-b9d9.onrender.com/appointment/${appointmentId}`)
     .then(res => res.json())
     .then(data => setAppointmentInfo(data));
 

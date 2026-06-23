@@ -62,7 +62,7 @@ const [selectedDoctor, setSelectedDoctor] = useState(null);
 
         const docRes = await fetch(
         //  `http://127.0.0.1:8000/available_doctors/${patientId}`
-         `https://rhms-b9d9.onrender.com/available_doctors/${patientId}`
+        `https://rhms-b9d9.onrender.com/available_doctors/${patientId}`
         );
 
         const docData = await docRes.json();
@@ -147,10 +147,10 @@ const [selectedDoctor, setSelectedDoctor] = useState(null);
               <div className="w-full h-32 bg-slate-100 rounded-lg flex items-center justify-center border border-dashed border-slate-300 relative overflow-hidden">
                 <span className="text-[10px] uppercase font-bold text-slate-400 absolute top-2">Visual Guide: Recording</span>
                 <div className="flex flex-col items-center">
-                   <div className="w-12 h-12 bg-white rounded-full shadow-md flex items-center justify-center mb-1">
+                  <div className="w-12 h-12 bg-white rounded-full shadow-md flex items-center justify-center mb-1">
                       <div className="w-4 h-4 bg-red-500 rounded-full animate-pulse"></div>
-                   </div>
-                   <p className="text-[10px] text-slate-400 italic font-medium text-center px-4">Hold phone 2cm from chest</p>
+                  </div>
+                  <p className="text-[10px] text-slate-400 italic font-medium text-center px-4">Hold phone 2cm from chest</p>
                 </div>
               </div>
             </div>
@@ -166,10 +166,10 @@ const [selectedDoctor, setSelectedDoctor] = useState(null);
               <div className="w-full h-32 bg-slate-100 rounded-lg flex items-center justify-center border border-dashed border-slate-300 relative overflow-hidden">
                 <span className="text-[10px] uppercase font-bold text-slate-400 absolute top-2">Visual Guide: Interface</span>
                 <div className="w-20 h-14 bg-white rounded border border-slate-200 shadow-sm flex items-center justify-center">
-                   <div className="w-10 h-2 bg-indigo-100 rounded"></div>
+                  <div className="w-10 h-2 bg-indigo-100 rounded"></div>
                 </div>
                 <div className="absolute bottom-4 right-4 animate-bounce">
-                   <div className="bg-indigo-600 p-1 rounded text-white"><ArrowUpTrayIcon className="h-4 w-4"/></div>
+                  <div className="bg-indigo-600 p-1 rounded text-white"><ArrowUpTrayIcon className="h-4 w-4"/></div>
                 </div>
               </div>
             </div>

@@ -46,8 +46,8 @@ function App() {
         />
 
           <Route path='/doctor/profile' element={<DocProfile />} />
-         <Route path='/patient/profile' element={<PatientProfile />} />
-         <Route path='/chatroom/:appointmentId' element={<ChatRoom />} />
+        <Route path='/patient/profile' element={<PatientProfile />} />
+        <Route path='/chatroom/:appointmentId' element={<ChatRoom />} />
 
         {/* Default redirect */}
         <Route path="*" element={<Navigate to="/" />} />
