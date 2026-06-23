@@ -418,18 +418,6 @@ def connect():
             # 'message': 'Existing appointment returned'
         })
 
-    # Otherwise create new
-    # appointment = Appointment(
-    #     doctor_id=data['doctor_id'],
-    #     patient_id=data['patient_id']
-    # )
-    # db.session.add(appointment)
-    # db.session.commit()
-
-    # return jsonify({
-    #     'appointment_id': appointment.id,
-    #     'message': 'New appointment created'
-    # })
 
 
 

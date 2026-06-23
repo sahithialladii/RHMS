@@ -284,9 +284,9 @@ const [selectedDoctor, setSelectedDoctor] = useState(null);
             {/* Results Section */}
             {prediction && (
               <div className="bg-white p-8 rounded-3xl shadow-xl border border-slate-200 overflow-hidden relative">
-                 <div className="absolute top-0 right-0 p-4 opacity-10">
+                <div className="absolute top-0 right-0 p-4 opacity-10">
                     <MicrophoneIcon className="h-24 w-24" />
-                 </div>
+                </div>
                 <div className="flex flex-col md:flex-row items-center justify-between gap-6">
                   <div className="text-center md:text-left">
                     <h3 className="text-slate-400 text-xs font-black uppercase tracking-[0.2em]">Diagnostic Result</h3>
