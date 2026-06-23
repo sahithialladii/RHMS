@@ -1,4 +1,5 @@
 from flask import Flask, request, jsonify
+
 from flask_sqlalchemy import SQLAlchemy
 from flask_cors import CORS
 from werkzeug.utils import secure_filename
@@ -9,14 +10,24 @@ import os
 import librosa
 from datetime import datetime, timedelta
 from tensorflow.keras.models import load_model
+import pymysql
+pymysql.install_as_MySQLdb()
 
 # ---------------- APP CONFIG ----------------
 app = Flask(__name__)
-CORS(app, resources={r"/*": {"origins": "http://localhost:5173"}})
+# CORS(app, resources={r"/*": {"origins": "http://localhost:5173"}})
+CORS(app, resources={r"/*": {"origins": "*"}})
 
 socketio = SocketIO(app, cors_allowed_origins="*")
 
-app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://root:%40Sahithi89@localhost/rhms'
+# app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://root:%40Sahithi89@localhost/rhms'
+app.config['SQLALCHEMY_DATABASE_URI'] = (
+    f"mysql+pymysql://{os.getenv('MYSQLUSER')}:"
+    f"{os.getenv('MYSQLPASSWORD')}@"
+    f"{os.getenv('MYSQLHOST')}:"
+    f"{os.getenv('MYSQLPORT')}/"
+    f"{os.getenv('MYSQLDATABASE')}"
+)
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['UPLOAD_FOLDER'] = 'uploads'
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
@@ -578,4 +589,4 @@ def complete_consultation():
 
 # ---------------- RUN ----------------
 if __name__ == '__main__':
-    socketio.run(app, host='127.0.0.1', port=8000, debug=True)
+    socketio.run(app, host='0.0.0.0', port=8000, debug=True)
