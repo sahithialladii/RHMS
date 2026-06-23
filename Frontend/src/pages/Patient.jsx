@@ -47,7 +47,8 @@ const [selectedDoctor, setSelectedDoctor] = useState(null);
     try {
       setLoading(true);
       setMessage("⏳ Analyzing your respiratory patterns...");
-      const res = await fetch("http://127.0.0.1:8000/upload_audio", {
+      // const res = await fetch("http://127.0.0.1:8000/upload_audio", {
+      const res = await fetch("https://rhms-b9d9.onrender.com/upload_audio", {
         method: "POST",
         body: formData,
       });
@@ -60,7 +61,8 @@ const [selectedDoctor, setSelectedDoctor] = useState(null);
         const patientId = localStorage.getItem("user_id");
 
         const docRes = await fetch(
-         `http://127.0.0.1:8000/available_doctors/${patientId}`
+        //  `http://127.0.0.1:8000/available_doctors/${patientId}`
+         `https://rhms-b9d9.onrender.com/available_doctors/${patientId}`
         );
 
         const docData = await docRes.json();
@@ -85,7 +87,8 @@ const [selectedDoctor, setSelectedDoctor] = useState(null);
   try {
     const patientId = localStorage.getItem("user_id");
 
-    const res = await fetch("http://127.0.0.1:8000/connect", {
+    // const res = await fetch("http://127.0.0.1:8000/connect", {
+    const res = await fetch("https://rhms-b9d9.onrender.com/connect", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({

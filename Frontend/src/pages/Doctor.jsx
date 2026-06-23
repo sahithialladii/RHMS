@@ -15,7 +15,8 @@ const DoctorDashboard = () => {
 
   // 🔴 Live Socket Updates
   useEffect(() => {
-    const socket = io("http://127.0.0.1:8000");
+    // const socket = io("http://127.0.0.1:8000");
+    const socket = io("https://rhms-b9d9.onrender.com");
 
     socket.emit("join_doctor_room", { doctor_id: doctorId });
 
@@ -36,7 +37,8 @@ const DoctorDashboard = () => {
   const fetchAppointments = async () => {
     try {
       const res = await fetch(
-        `http://127.0.0.1:8000/doctor/appointments/${doctorId}`
+        // `http://127.0.0.1:8000/doctor/appointments/${doctorId}`
+        `https://rhms-b9d9.onrender.com/doctor/appointments/${doctorId}`
       );
       const data = await res.json();
       setAppointments(data);
@@ -51,7 +53,8 @@ const DoctorDashboard = () => {
   const handleViewDetails = async (patientId, appointmentId) => {
     try {
       const res = await fetch(
-        `http://127.0.0.1:8000/doctor/patient_full_profile/${patientId}`
+        // `http://127.0.0.1:8000/doctor/patient_full_profile/${patientId}`
+        `https://rhms-b9d9.onrender.com/doctor/patient_full_profile/${patientId}`
       );
       const data = await res.json();
 

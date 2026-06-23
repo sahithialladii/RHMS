@@ -50,7 +50,8 @@ const ChatRoom = () => {
       console.log("Received message:",data)
       setMessages((prev) => [...prev, data]);
     });
-     fetch(`http://127.0.0.1:8000/appointment/${appointmentId}`)
+    //  fetch(`http://127.0.0.1:8000/appointment/${appointmentId}`)
+     fetch(`https://rhms-b9d9.onrender.com/appointment/${appointmentId}`)
     .then(res => res.json())
     .then(data => setAppointmentInfo(data));
 
@@ -77,7 +78,8 @@ const ChatRoom = () => {
 
 
   const finishConsultation = async () => {
-    await fetch("http://127.0.0.1:8000/complete_consultation", {
+    // await fetch("http://127.0.0.1:8000/complete_consultation", {
+    await fetch("https://rhms-b9d9.onrender.com/complete_consultation", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
