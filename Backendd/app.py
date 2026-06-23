@@ -90,6 +90,18 @@ with app.app_context():
 MODEL_PATH = "model/model.keras"
 model = load_model(MODEL_PATH)
 
+
+
+
+
+
+#-------------------------------------------------
+@app.route('/')
+def home():
+    return {
+        "status": "success",
+        "message": "RHMS Backend Running"
+    }
 # ---------------- REGISTER ----------------
 @app.route('/register', methods=['POST'])
 def register():
