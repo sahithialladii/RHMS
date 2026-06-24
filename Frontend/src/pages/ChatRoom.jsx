@@ -2,8 +2,8 @@ import React, { useEffect, useState } from "react";
 import { useLocation, useParams, useNavigate } from "react-router-dom";
 import io from "socket.io-client";
 
-// const socket = io("http://127.0.0.1:8000", {
-const socket = io("https://rhms-b9d9.onrender.com", {
+const socket = io("http://127.0.0.1:8000", {
+// const socket = io("https://rhms-b9d9.onrender.com", {
   transports: ["websocket"],
   autoConnect: false,
 });
@@ -51,8 +51,8 @@ const ChatRoom = () => {
       console.log("Received message:",data)
       setMessages((prev) => [...prev, data]);
     });
-    //  fetch(`http://127.0.0.1:8000/appointment/${appointmentId}`)
-    fetch(`https://rhms-b9d9.onrender.com/appointment/${appointmentId}`)
+     fetch(`http://127.0.0.1:8000/appointment/${appointmentId}`)
+    // fetch(`https://rhms-b9d9.onrender.com/appointment/${appointmentId}`)
     .then(res => res.json())
     .then(data => setAppointmentInfo(data));
 
@@ -79,8 +79,8 @@ const ChatRoom = () => {
 
 
   const finishConsultation = async () => {
-    // await fetch("http://127.0.0.1:8000/complete_consultation", {
-    await fetch("https://rhms-b9d9.onrender.com/complete_consultation", {
+    await fetch("http://127.0.0.1:8000/complete_consultation", {
+    // await fetch("https://rhms-b9d9.onrender.com/complete_consultation", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({

@@ -1,6 +1,4 @@
 
-import eventlet
-eventlet.monkey_patch()
 
 
 from flask import Flask, request, jsonify
@@ -15,24 +13,16 @@ import os
 import librosa
 from datetime import datetime, timedelta
 from tensorflow.keras.models import load_model
-import pymysql
-pymysql.install_as_MySQLdb()
+
 
 # ---------------- APP CONFIG ----------------
 app = Flask(__name__)
-# CORS(app, resources={r"/*": {"origins": "http://localhost:5173"}})
-CORS(app, resources={r"/*": {"origins": "*"}})
+CORS(app, resources={r"/*": {"origins": "http://localhost:5173"}})
+
 
 socketio = SocketIO(app, cors_allowed_origins="*")
 
-# app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://root:%40Sahithi89@localhost/rhms'
-app.config['SQLALCHEMY_DATABASE_URI'] = (
-    f"mysql+pymysql://{os.getenv('MYSQLUSER')}:"
-    f"{os.getenv('MYSQLPASSWORD')}@"
-    f"{os.getenv('MYSQLHOST')}:"
-    f"{os.getenv('MYSQLPORT')}/"
-    f"{os.getenv('MYSQLDATABASE')}"
-)
+app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://root:%40Sahithi89@localhost/rhms'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['UPLOAD_FOLDER'] = 'uploads'
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
@@ -337,289 +327,45 @@ def upload_report():
 
 
 # ---------------- AUDIO UPLOAD ----------------
-# @app.route('/upload_audio', methods=['POST'])
-# def upload_audio():
-#     user_id = request.form.get('user_id')
-#     file = request.files.get('file')
-
-#     filepath = os.path.join(app.config['UPLOAD_FOLDER'], secure_filename(file.filename))
-#     file.save(filepath)
-
-#     y, sr = librosa.load(filepath, sr=16000)
-#     mel = librosa.feature.melspectrogram(y=y, sr=sr, n_mels=64)
-#     mel_db = librosa.power_to_db(mel, ref=np.max)
-
-#     mel_db = mel_db[:, :38]
-#     mel_db = (mel_db - np.min(mel_db)) / (np.max(mel_db) - np.min(mel_db))
-#     input_data = np.expand_dims(np.stack([mel_db]*3, axis=-1), axis=0)
-
-#     prediction = model.predict(input_data)
-#     predicted_class = np.argmax(prediction)
-
-#     labels = {
-#         0: "Asthma",
-#         1: "Broncheostasis",
-#         2: "Bronchiolitis",
-#         3: "COPD",
-#         4: "Healthy",
-#         5: "Pneumonia",
-#         6: "URTI"
-#     }
-
-#     result = labels.get(predicted_class)
-
-#     patient = PatientProfile.query.filter_by(user_id=user_id).first()
-#     patient.model_output = result
-#     db.session.commit()
-
-#     return jsonify({'prediction': result})
-
-
-# @app.route('/upload_audio', methods=['POST'])
-# def upload_audio():
-#     try:
-#         user_id = request.form.get('user_id')
-#         file = request.files.get('file')
-
-#         print("USER ID:", user_id)
-#         print("FILE:", file)
-
-#         filepath = os.path.join(
-#             app.config['UPLOAD_FOLDER'],
-#             secure_filename(file.filename)
-#         )
-
-#         file.save(filepath)
-
-#         y, sr = librosa.load(filepath, sr=16000)
-
-#         mel = librosa.feature.melspectrogram(
-#             y=y,
-#             sr=sr,
-#             n_mels=64
-#         )
-
-#         mel_db = librosa.power_to_db(mel, ref=np.max)
-
-#         mel_db = mel_db[:, :38]
-
-#         mel_db = (
-#             mel_db - np.min(mel_db)
-#         ) / (
-#             np.max(mel_db) - np.min(mel_db)
-#         )
-
-#         input_data = np.expand_dims(
-#             np.stack([mel_db] * 3, axis=-1),
-#             axis=0
-#         )
-
-#         prediction = model.predict(input_data)
-
-#         predicted_class = np.argmax(prediction)
-
-#         labels = {
-#             0: "Asthma",
-#             1: "Broncheostasis",
-#             2: "Bronchiolitis",
-#             3: "COPD",
-#             4: "Healthy",
-#             5: "Pneumonia",
-#             6: "URTI"
-#         }
-
-#         result = labels.get(predicted_class)
-
-#         patient = PatientProfile.query.filter_by(
-#             user_id=user_id
-#         ).first()
-
-#         patient.model_output = result
-
-#         db.session.commit()
-
-#         return jsonify({"prediction": result})
-
-#     except Exception as e:
-#         print("UPLOAD AUDIO ERROR:", str(e))
-#         return jsonify({"error": str(e)}), 500
-
-
-
-
-
-
-# @app.route('/upload_audio', methods=['POST'])
-# def upload_audio():
-#     try:
-#         print("========== AUDIO UPLOAD START ==========")
-
-#         user_id = request.form.get('user_id')
-#         file = request.files.get('file')
-
-#         print("USER ID:", user_id)
-
-#         if not file:
-#             print("No file received")
-#             return jsonify({"error": "No file uploaded"}), 400
-
-#         print("FILE NAME:", file.filename)
-
-#         filepath = os.path.join(
-#             app.config['UPLOAD_FOLDER'],
-#             secure_filename(file.filename)
-#         )
-
-#         file.save(filepath)
-
-#         print("File saved:", filepath)
-
-#         # Load audio
-#         y, sr = librosa.load(filepath, sr=16000)
-
-#         print("Audio loaded")
-#         print("Audio length:", len(y))
-#         print("Sample rate:", sr)
-
-#         # Generate Mel Spectrogram
-#         mel = librosa.feature.melspectrogram(
-#             y=y,
-#             sr=sr,
-#             n_mels=64
-#         )
-
-#         print("Mel spectrogram created")
-#         print("Mel shape:", mel.shape)
-
-#         mel_db = librosa.power_to_db(
-#             mel,
-#             ref=np.max
-#         )
-
-#         print("Mel DB shape:", mel_db.shape)
-
-#         # Make sure enough frames exist
-#         if mel_db.shape[1] < 38:
-#             print("Audio too short")
-#             return jsonify({
-#                 "error": f"Audio too short. Need at least 38 frames, got {mel_db.shape[1]}"
-#             }), 400
-
-#         mel_db = mel_db[:, :38]
-
-#         print("After slicing:", mel_db.shape)
-
-#         # Normalize
-#         mel_db = (
-#             mel_db - np.min(mel_db)
-#         ) / (
-#             np.max(mel_db) - np.min(mel_db)
-#         )
-
-#         # Model input shape
-#         input_data = np.expand_dims(
-#             np.stack([mel_db] * 3, axis=-1),
-#             axis=0
-#         )
-
-#         print("Input shape:", input_data.shape)
-
-#         # Prediction
-#         print("Running model prediction...")
-
-#         prediction = model.predict(input_data)
-
-#         print("Prediction complete")
-#         print("Raw prediction:", prediction)
-
-#         predicted_class = int(np.argmax(prediction))
-
-#         print("Predicted class:", predicted_class)
-
-#         labels = {
-#             0: "Asthma",
-#             1: "Broncheostasis",
-#             2: "Bronchiolitis",
-#             3: "COPD",
-#             4: "Healthy",
-#             5: "Pneumonia",
-#             6: "URTI"
-#         }
-
-#         result = labels.get(predicted_class, "Unknown")
-
-#         print("Predicted disease:", result)
-
-#         # Save to database
-#         patient = PatientProfile.query.filter_by(
-#             user_id=user_id
-#         ).first()
-
-#         if patient:
-#             patient.model_output = result
-#             db.session.commit()
-#             print("Database updated")
-#         else:
-#             print("Patient profile not found")
-
-#         print("========== AUDIO UPLOAD SUCCESS ==========")
-
-#         return jsonify({
-#             "prediction": result
-#         })
-
-#     except Exception as e:
-#         print("========== AUDIO UPLOAD ERROR ==========")
-#         print(str(e))
-
-#         return jsonify({
-#             "error": str(e)
-#         }), 500
-
-
-
 @app.route('/upload_audio', methods=['POST'])
 def upload_audio():
-    try:
-        print("STEP 1")
+    user_id = request.form.get('user_id')
+    file = request.files.get('file')
 
-        file = request.files.get("file")
+    filepath = os.path.join(app.config['UPLOAD_FOLDER'], secure_filename(file.filename))
+    file.save(filepath)
 
-        print("STEP 2")
+    y, sr = librosa.load(filepath, sr=16000)
+    mel = librosa.feature.melspectrogram(y=y, sr=sr, n_mels=64)
+    mel_db = librosa.power_to_db(mel, ref=np.max)
 
-        filepath = os.path.join(
-            app.config['UPLOAD_FOLDER'],
-            secure_filename(file.filename)
-        )
+    mel_db = mel_db[:, :38]
+    mel_db = (mel_db - np.min(mel_db)) / (np.max(mel_db) - np.min(mel_db))
+    input_data = np.expand_dims(np.stack([mel_db]*3, axis=-1), axis=0)
 
-        file.save(filepath)
+    prediction = model.predict(input_data)
+    predicted_class = np.argmax(prediction)
 
-        print("STEP 3")
+    labels = {
+        0: "Asthma",
+        1: "Broncheostasis",
+        2: "Bronchiolitis",
+        3: "COPD",
+        4: "Healthy",
+        5: "Pneumonia",
+        6: "URTI"
+    }
 
-        y, sr = librosa.load(filepath, sr=16000)
+    result = labels.get(predicted_class)
 
-        print("STEP 4")
+    patient = PatientProfile.query.filter_by(user_id=user_id).first()
+    patient.model_output = result
+    db.session.commit()
 
-        mel = librosa.feature.melspectrogram(
-            y=y,
-            sr=sr,
-            n_mels=64
-        )
+    return jsonify({'prediction': result})
 
-        print("STEP 5")
 
-        mel_db = librosa.power_to_db(
-            mel,
-            ref=np.max
-        )
 
-        print("STEP 6")
-
-        return jsonify({"prediction":"Healthy"})
-
-    except Exception as e:
-        print("ERROR:", str(e))
-        return jsonify({"error": str(e)}), 500
 
 
 # ---------------- AVAILABLE DOCTORS ----------------
@@ -854,4 +600,4 @@ def complete_consultation():
 
 # ---------------- RUN ----------------
 if __name__ == '__main__':
-    socketio.run(app, host='0.0.0.0', port=8000, debug=True)
+    socketio.run(app, host='127.0.0.1', port=8000, debug=True)

@@ -38,8 +38,8 @@ const Register = () => {
     setLoading(true);
 
     try {
-      // const response = await axios.post("http://127.0.0.1:8000/register", userData);
-      const response = await axios.post("https://rhms-b9d9.onrender.com/register", userData);
+      const response = await axios.post("http://127.0.0.1:8000/register", userData);
+      // const response = await axios.post("https://rhms-b9d9.onrender.com/register", userData);
       console.log("Registration successful:", response.data);
 
       alert(`${role.toUpperCase()} registered successfully! Please login.`);

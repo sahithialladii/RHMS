@@ -21,8 +21,8 @@ const DocProfile = () => {
   const fetchProfile = async () => {
     try {
       const response = await axios.get(
-        // `http://127.0.0.1:8000/doctor/profile/${userId}`
-        `https://rhms-b9d9.onrender.com/doctor/profile/${userId}`
+        `http://127.0.0.1:8000/doctor/profile/${userId}`
+        // `https://rhms-b9d9.onrender.com/doctor/profile/${userId}`
       );
       setDoctor(response.data);
     } catch (err) {
@@ -40,8 +40,8 @@ const DocProfile = () => {
   const handleSave = async () => {
     try {
       await axios.put(
-        // "http://127.0.0.1:8000/doctor/profile/update",
-        "https://rhms-b9d9.onrender.com/doctor/profile/update",
+        "http://127.0.0.1:8000/doctor/profile/update",
+        // "https://rhms-b9d9.onrender.com/doctor/profile/update",
         {
           user_id: userId,
           ...doctor,

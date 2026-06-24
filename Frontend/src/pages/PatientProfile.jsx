@@ -17,8 +17,8 @@ const PatientProfile = () => {
     const fetchProfile = async () => {
       try {
         const response = await axios.get(
-          // `http://127.0.0.1:8000/profile/${userId}`
-          `https://rhms-b9d9.onrender.com/profile/${userId}`
+          `http://127.0.0.1:8000/profile/${userId}`
+          // `https://rhms-b9d9.onrender.com/profile/${userId}`
         );
         setPatient(response.data);
       } catch (err) {
@@ -31,8 +31,8 @@ const PatientProfile = () => {
 
   const handleSave = async () => {
     try {
-      // await axios.put("http://127.0.0.1:8000/profile/update", {
-      await axios.put("https://rhms-b9d9.onrender.com/profile/update", {
+      await axios.put("http://127.0.0.1:8000/profile/update", {
+      // await axios.put("https://rhms-b9d9.onrender.com/profile/update", {
         user_id: userId,
         name: patient.name,
         age: patient.age,
@@ -59,8 +59,8 @@ const PatientProfile = () => {
 
     try {
       await axios.post(
-        // "http://127.0.0.1:8000/upload_report",
-        "https://rhms-b9d9.onrender.com/upload_report",
+        "http://127.0.0.1:8000/upload_report",
+        // "https://rhms-b9d9.onrender.com/upload_report",
         formData
       );
       alert("Report uploaded successfully");
