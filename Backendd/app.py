@@ -596,11 +596,30 @@ def upload_audio():
 
         print("STEP 3")
 
+        y, sr = librosa.load(filepath, sr=16000)
+
+        print("STEP 4")
+
+        mel = librosa.feature.melspectrogram(
+            y=y,
+            sr=sr,
+            n_mels=64
+        )
+
+        print("STEP 5")
+
+        mel_db = librosa.power_to_db(
+            mel,
+            ref=np.max
+        )
+
+        print("STEP 6")
+
         return jsonify({"prediction":"Healthy"})
 
     except Exception as e:
-        print("ERROR:", e)
-        return jsonify({"error":str(e)}),500
+        print("ERROR:", str(e))
+        return jsonify({"error": str(e)}), 500
 
 
 # ---------------- AVAILABLE DOCTORS ----------------
