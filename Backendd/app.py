@@ -445,18 +445,21 @@ def upload_report():
 #         return jsonify({"error": str(e)}), 500
 
 
-
-
-
 @app.route('/upload_audio', methods=['POST'])
 def upload_audio():
     try:
-        print("Upload endpoint hit")
+        print("========== AUDIO UPLOAD START ==========")
 
         user_id = request.form.get('user_id')
         file = request.files.get('file')
 
-        print("File received:", file.filename)
+        print("USER ID:", user_id)
+
+        if not file:
+            print("No file received")
+            return jsonify({"error": "No file uploaded"}), 400
+
+        print("FILE NAME:", file.filename)
 
         filepath = os.path.join(
             app.config['UPLOAD_FOLDER'],
@@ -465,33 +468,111 @@ def upload_audio():
 
         file.save(filepath)
 
-        print("File saved")
+        print("File saved:", filepath)
 
+        # Load audio
         y, sr = librosa.load(filepath, sr=16000)
 
         print("Audio loaded")
+        print("Audio length:", len(y))
+        print("Sample rate:", sr)
 
+        # Generate Mel Spectrogram
         mel = librosa.feature.melspectrogram(
             y=y,
             sr=sr,
             n_mels=64
         )
 
-        print("Mel created")
+        print("Mel spectrogram created")
+        print("Mel shape:", mel.shape)
+
+        mel_db = librosa.power_to_db(
+            mel,
+            ref=np.max
+        )
+
+        print("Mel DB shape:", mel_db.shape)
+
+        # Make sure enough frames exist
+        if mel_db.shape[1] < 38:
+            print("Audio too short")
+            return jsonify({
+                "error": f"Audio too short. Need at least 38 frames, got {mel_db.shape[1]}"
+            }), 400
+
+        mel_db = mel_db[:, :38]
+
+        print("After slicing:", mel_db.shape)
+
+        # Normalize
+        mel_db = (
+            mel_db - np.min(mel_db)
+        ) / (
+            np.max(mel_db) - np.min(mel_db)
+        )
+
+        # Model input shape
+        input_data = np.expand_dims(
+            np.stack([mel_db] * 3, axis=-1),
+            axis=0
+        )
+
+        print("Input shape:", input_data.shape)
+
+        # Prediction
+        print("Running model prediction...")
 
         prediction = model.predict(input_data)
 
-        print("Prediction done")
+        print("Prediction complete")
+        print("Raw prediction:", prediction)
+
+        predicted_class = int(np.argmax(prediction))
+
+        print("Predicted class:", predicted_class)
+
+        labels = {
+            0: "Asthma",
+            1: "Broncheostasis",
+            2: "Bronchiolitis",
+            3: "COPD",
+            4: "Healthy",
+            5: "Pneumonia",
+            6: "URTI"
+        }
+
+        result = labels.get(predicted_class, "Unknown")
+
+        print("Predicted disease:", result)
+
+        # Save to database
+        patient = PatientProfile.query.filter_by(
+            user_id=user_id
+        ).first()
+
+        if patient:
+            patient.model_output = result
+            db.session.commit()
+            print("Database updated")
+        else:
+            print("Patient profile not found")
+
+        print("========== AUDIO UPLOAD SUCCESS ==========")
 
         return jsonify({
             "prediction": result
         })
 
     except Exception as e:
-        print("UPLOAD ERROR:", str(e))
+        print("========== AUDIO UPLOAD ERROR ==========")
+        print(str(e))
+
         return jsonify({
             "error": str(e)
         }), 500
+
+
 
 # ---------------- AVAILABLE DOCTORS ----------------
 @app.route('/available_doctors/<int:patient_id>')
