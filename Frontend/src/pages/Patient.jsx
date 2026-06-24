@@ -48,18 +48,10 @@ const [selectedDoctor, setSelectedDoctor] = useState(null);
       setLoading(true);
       setMessage("⏳ Analyzing your respiratory patterns...");
       // const res = await fetch("http://127.0.0.1:8000/upload_audio", {
-      // const res = await fetch("https://rhms-b9d9.onrender.com/upload_audio", {
-      //   method: "POST",
-      //   body: formData,
-      // });
-
-      const res = await fetch(
-  "https://rhms-b9d9.onrender.com/test_upload",
-  {
-    method: "POST",
-    body: formData,
-  }
-);
+      const res = await fetch("https://rhms-b9d9.onrender.com/upload_audio", {
+        method: "POST",
+        body: formData,
+      });
 
       if (!res.ok) throw new Error("Server error.");
       const data = await res.json();
