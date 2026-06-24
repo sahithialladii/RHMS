@@ -108,6 +108,15 @@ const [selectedDoctor, setSelectedDoctor] = useState(null);
 };
 
 
+const res = await fetch(
+  "https://rhms-b9d9.onrender.com/test_upload",
+  {
+    method: "POST",
+    body: formData,
+  }
+);
+
+
   return (
     <div className="min-h-screen bg-slate-50 font-sans text-slate-900">
       {/* Navbar */}

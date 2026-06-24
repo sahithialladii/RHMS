@@ -445,6 +445,16 @@ def upload_report():
 #         return jsonify({"error": str(e)}), 500
 
 
+
+@app.route('/test_upload', methods=['POST'])
+def test_upload():
+    print("TEST ROUTE HIT")
+    return jsonify({
+        "message": "working"
+    })
+
+
+
 @app.route('/upload_audio', methods=['POST'])
 def upload_audio():
     try:
