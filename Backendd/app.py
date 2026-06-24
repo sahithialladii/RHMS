@@ -580,11 +580,27 @@ def upload_report():
 
 @app.route('/upload_audio', methods=['POST'])
 def upload_audio():
-    print("UPLOAD ROUTE HIT")
+    try:
+        print("STEP 1")
 
-    return jsonify({
-        "prediction": "Healthy"
-    })
+        file = request.files.get("file")
+
+        print("STEP 2")
+
+        filepath = os.path.join(
+            app.config['UPLOAD_FOLDER'],
+            secure_filename(file.filename)
+        )
+
+        file.save(filepath)
+
+        print("STEP 3")
+
+        return jsonify({"prediction":"Healthy"})
+
+    except Exception as e:
+        print("ERROR:", e)
+        return jsonify({"error":str(e)}),500
 
 
 # ---------------- AVAILABLE DOCTORS ----------------
