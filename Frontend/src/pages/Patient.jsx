@@ -63,6 +63,7 @@ const [selectedDoctor, setSelectedDoctor] = useState(null);
 
       if (!res.ok) throw new Error("Server error.");
       const data = await res.json();
+      console.log("SERVER RESPONSE:", data);
       
       setPrediction(data.prediction || "No prediction received.");
       if (data.prediction?.toLowerCase() !== "healthy") {
