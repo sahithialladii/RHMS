@@ -337,42 +337,112 @@ def upload_report():
 
 
 # ---------------- AUDIO UPLOAD ----------------
+# @app.route('/upload_audio', methods=['POST'])
+# def upload_audio():
+#     user_id = request.form.get('user_id')
+#     file = request.files.get('file')
+
+#     filepath = os.path.join(app.config['UPLOAD_FOLDER'], secure_filename(file.filename))
+#     file.save(filepath)
+
+#     y, sr = librosa.load(filepath, sr=16000)
+#     mel = librosa.feature.melspectrogram(y=y, sr=sr, n_mels=64)
+#     mel_db = librosa.power_to_db(mel, ref=np.max)
+
+#     mel_db = mel_db[:, :38]
+#     mel_db = (mel_db - np.min(mel_db)) / (np.max(mel_db) - np.min(mel_db))
+#     input_data = np.expand_dims(np.stack([mel_db]*3, axis=-1), axis=0)
+
+#     prediction = model.predict(input_data)
+#     predicted_class = np.argmax(prediction)
+
+#     labels = {
+#         0: "Asthma",
+#         1: "Broncheostasis",
+#         2: "Bronchiolitis",
+#         3: "COPD",
+#         4: "Healthy",
+#         5: "Pneumonia",
+#         6: "URTI"
+#     }
+
+#     result = labels.get(predicted_class)
+
+#     patient = PatientProfile.query.filter_by(user_id=user_id).first()
+#     patient.model_output = result
+#     db.session.commit()
+
+#     return jsonify({'prediction': result})
+
+
 @app.route('/upload_audio', methods=['POST'])
 def upload_audio():
-    user_id = request.form.get('user_id')
-    file = request.files.get('file')
+    try:
+        user_id = request.form.get('user_id')
+        file = request.files.get('file')
 
-    filepath = os.path.join(app.config['UPLOAD_FOLDER'], secure_filename(file.filename))
-    file.save(filepath)
+        print("USER ID:", user_id)
+        print("FILE:", file)
 
-    y, sr = librosa.load(filepath, sr=16000)
-    mel = librosa.feature.melspectrogram(y=y, sr=sr, n_mels=64)
-    mel_db = librosa.power_to_db(mel, ref=np.max)
+        filepath = os.path.join(
+            app.config['UPLOAD_FOLDER'],
+            secure_filename(file.filename)
+        )
 
-    mel_db = mel_db[:, :38]
-    mel_db = (mel_db - np.min(mel_db)) / (np.max(mel_db) - np.min(mel_db))
-    input_data = np.expand_dims(np.stack([mel_db]*3, axis=-1), axis=0)
+        file.save(filepath)
 
-    prediction = model.predict(input_data)
-    predicted_class = np.argmax(prediction)
+        y, sr = librosa.load(filepath, sr=16000)
 
-    labels = {
-        0: "Asthma",
-        1: "Broncheostasis",
-        2: "Bronchiolitis",
-        3: "COPD",
-        4: "Healthy",
-        5: "Pneumonia",
-        6: "URTI"
-    }
+        mel = librosa.feature.melspectrogram(
+            y=y,
+            sr=sr,
+            n_mels=64
+        )
 
-    result = labels.get(predicted_class)
+        mel_db = librosa.power_to_db(mel, ref=np.max)
 
-    patient = PatientProfile.query.filter_by(user_id=user_id).first()
-    patient.model_output = result
-    db.session.commit()
+        mel_db = mel_db[:, :38]
 
-    return jsonify({'prediction': result})
+        mel_db = (
+            mel_db - np.min(mel_db)
+        ) / (
+            np.max(mel_db) - np.min(mel_db)
+        )
+
+        input_data = np.expand_dims(
+            np.stack([mel_db] * 3, axis=-1),
+            axis=0
+        )
+
+        prediction = model.predict(input_data)
+
+        predicted_class = np.argmax(prediction)
+
+        labels = {
+            0: "Asthma",
+            1: "Broncheostasis",
+            2: "Bronchiolitis",
+            3: "COPD",
+            4: "Healthy",
+            5: "Pneumonia",
+            6: "URTI"
+        }
+
+        result = labels.get(predicted_class)
+
+        patient = PatientProfile.query.filter_by(
+            user_id=user_id
+        ).first()
+
+        patient.model_output = result
+
+        db.session.commit()
+
+        return jsonify({"prediction": result})
+
+    except Exception as e:
+        print("UPLOAD AUDIO ERROR:", str(e))
+        return jsonify({"error": str(e)}), 500
 
 # ---------------- AVAILABLE DOCTORS ----------------
 @app.route('/available_doctors/<int:patient_id>')
