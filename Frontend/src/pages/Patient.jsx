@@ -55,13 +55,14 @@ const [selectedDoctor, setSelectedDoctor] = useState(null);
 
       if (!res.ok) throw new Error("Server error.");
       const data = await res.json();
+
       
       setPrediction(data.prediction || "No prediction received.");
       if (data.prediction?.toLowerCase() !== "healthy") {
         const patientId = localStorage.getItem("user_id");
 
         const docRes = await fetch(
-         `http://127.0.0.1:8000/available_doctors/${patientId}`
+        `http://127.0.0.1:8000/available_doctors/${patientId}`
         // `https://rhms-b9d9.onrender.com/available_doctors/${patientId}`
         );
 
@@ -106,9 +107,6 @@ const [selectedDoctor, setSelectedDoctor] = useState(null);
     console.error("Connection failed:", error);
   }
 };
-
-
-
 
   return (
     <div className="min-h-screen bg-slate-50 font-sans text-slate-900">
@@ -306,13 +304,6 @@ const [selectedDoctor, setSelectedDoctor] = useState(null);
                   )}
                 </div>
 
-                {prediction && (
-  <div className="bg-white p-8 rounded-3xl shadow-xl border border-slate-200 overflow-hidden relative">
-    
-    {/* Result Display */}
-    <div className="flex flex-col md:flex-row items-center justify-between gap-6">
-      ...
-    </div>
 
     {/* 👇 PLACE DOCTOR LIST HERE */}
     {doctors.length > 0 && (
@@ -341,9 +332,7 @@ const [selectedDoctor, setSelectedDoctor] = useState(null);
           Connect Selected Doctor
         </button>
       </div>
-    )}
-  </div>
-)}
+)} 
 
 
                 {connectedDoctor && (

@@ -33,6 +33,14 @@ const Register = () => {
       alert("Passwords do not match!");
       return;
     }
+    
+    if (
+  role === "doctor" &&
+  formData.available_to <= formData.available_from
+) {
+  alert("Available To must be later than Available From");
+  return;
+}
 
     const userData = { ...formData, role };
     setLoading(true);

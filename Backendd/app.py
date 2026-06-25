@@ -121,12 +121,20 @@ def register():
             age=data.get("age"),
         )
     else:
+        available_from = datetime.strptime(data.get("available_from"), "%H:%M").time()
+
+        available_to = datetime.strptime(data.get("available_to"), "%H:%M").time()
+
+        if available_to <= available_from:
+            return jsonify({"error": "Available To must be later than Available From"}), 400
+
         profile = DoctorProfile(
             user_id=user.id,
             specialization=data.get("specialization"),
-            available_from=datetime.strptime(data.get("available_from"), "%H:%M").time(),
-            available_to=datetime.strptime(data.get("available_to"), "%H:%M").time()
+            available_from=available_from,
+            available_to=available_to
         )
+    
 
     db.session.add(profile)
     db.session.commit()
@@ -357,10 +365,10 @@ def upload_audio():
     }
 
     result = labels.get(predicted_class)
-
     patient = PatientProfile.query.filter_by(user_id=user_id).first()
     patient.model_output = result
     db.session.commit()
+
 
     return jsonify({'prediction': result})
 
@@ -373,15 +381,21 @@ def upload_audio():
 def available_doctors(patient_id):
     patient = PatientProfile.query.filter_by(user_id=patient_id).first()
 
+    if not patient:
+        return jsonify([])
+
     if patient.model_output == "Healthy":
         return jsonify({'message': 'No doctor required'})
 
     now = datetime.now().time()
+
+
     doctors = DoctorProfile.query.filter(
         DoctorProfile.available_from <= now,
         DoctorProfile.available_to >= now,
         DoctorProfile.status == "Available"
     ).all()
+
 
     result = []
     for d in doctors:
@@ -391,6 +405,8 @@ def available_doctors(patient_id):
             "name": user.name,
             "specialization": d.specialization
         })
+        
+    
 
     return jsonify(result)
 
